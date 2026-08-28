@@ -7,6 +7,9 @@ interface EndingRevealProps {
   clues: any[];
   companionName?: string;
   gameMode?: 'solo' | 'team' | null;
+  reasoningText?: string | null;
+  reasoningScore?: number | null;
+  reasoningComment?: string | null;
 }
 
 const endingConfig: Record<string, { title: string; stampClass: string; color: string; gif: 'swing' | 'sleep' | 'sleep'; gifText: string }> = {
@@ -15,7 +18,7 @@ const endingConfig: Record<string, { title: string; stampClass: string; color: s
   bad: { title: '错误指控', stampClass: 'stamp-seal', color: '#c05252', gif: 'sleep', gifText: '再想想吧……' },
 };
 
-export default function EndingReveal({ endingType, endingText, truth, clues, companionName, gameMode }: EndingRevealProps) {
+export default function EndingReveal({ endingType, endingText, truth, clues, companionName, gameMode, reasoningText, reasoningScore, reasoningComment }: EndingRevealProps) {
   const cfg = endingType ? endingConfig[endingType] || endingConfig.neutral : endingConfig.neutral;
 
   return (
@@ -69,6 +72,26 @@ export default function EndingReveal({ endingType, endingText, truth, clues, com
         <p className="text-sm text-[#8a94a8] mb-4">
           你独立完成了本次调查
         </p>
+      )}
+
+      {(reasoningComment || reasoningScore != null) && (
+        <div className="bg-[#0a0c10]/70 rounded border border-[#8a6d35]/40 p-5 mb-6 max-w-2xl mx-auto text-left">
+          <div className="flex items-center justify-between mb-2">
+            <p className="text-xs text-[#5a6478] tracking-widest">看山对你的推理的点评</p>
+            {reasoningScore != null && (
+              <span className={`text-xs font-serif-detective font-bold ${reasoningScore >= 7 ? 'text-[#6dbb8a]' : reasoningScore >= 4 ? 'text-[#d4a24c]' : 'text-[#c05252]'}`}>
+                推理评分 {reasoningScore}/10
+              </span>
+            )}
+          </div>
+          {reasoningComment && <p className="text-sm text-[#c9d2e0] leading-relaxed">{reasoningComment}</p>}
+          {reasoningText && (
+            <details className="mt-3">
+              <summary className="text-xs text-[#5a6478] cursor-pointer hover:text-[#8a94a8]">回看你的结案陈词</summary>
+              <p className="text-xs text-[#8a94a8] leading-relaxed mt-2 border-l-2 border-[#3d5a7a] pl-3">{reasoningText}</p>
+            </details>
+          )}
+        </div>
       )}
 
       {truth && (

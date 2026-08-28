@@ -82,7 +82,7 @@ export default function DialogueBox({ dialogues, npcList, currentNpcId, question
               ) : (
                 <div className="w-[30px] h-[30px] rounded-full border shrink-0 mt-0.5 flex items-center justify-center text-[10px] font-bold"
                   style={{ borderColor: cfg.borderColor, color: cfg.borderColor }}>
-                  {d.role === 'player' ? '你' : d.role === 'companion' ? '档' : name[0]}
+                  {d.role === 'player' ? '你' : d.role === 'companion' ? '伴' : name[0]}
                 </div>
               )}
               <div className="flex-1 min-w-0 border-l-2 pl-3 py-1" style={{ borderColor: cfg.borderColor }}>

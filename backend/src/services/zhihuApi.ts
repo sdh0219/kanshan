@@ -55,7 +55,8 @@ async function request<T = any>(path: string, req?: Request, ttl = 600): Promise
       return data;
     } catch (err: any) {
       lastErr = err;
-      const retryable = err?.isRateLimit || (err?.statusCode >= 500 && err?.statusCode < 600);
+      // 限流不会在几秒内恢复，重试只会浪费当日配额，只重试服务端错误
+      const retryable = err?.statusCode >= 500 && err?.statusCode < 600;
       if (!retryable || attempt === RETRY_DELAYS.length) break;
       console.warn(`[ZhihuAPI] ${err.message}，${RETRY_DELAYS[attempt] / 1000}s后重试 (${attempt + 1}/${RETRY_DELAYS.length})`);
       await sleep(RETRY_DELAYS[attempt]);

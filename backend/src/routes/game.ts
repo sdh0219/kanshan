@@ -63,16 +63,24 @@ router.post('/talk', async (req, res, next) => {
   }
 });
 
-router.post('/evaluate', (req, res) => {
-  const { state, caseId } = req.body;
-  if (!state?.clues) {
-    return res.status(400).json({ error: 'state.clues 必填' });
+router.post('/evaluate', async (req, res, next) => {
+  try {
+    const { state, caseId, reasoning } = req.body;
+    if (!state?.clues) {
+      return res.status(400).json({ error: 'state.clues 必填' });
+    }
+    const finalState = { ...state, caseId: state?.caseId || caseId || 'preset' };
+    const { endingType, reasoningScore, reasoningComment } = await gameEngine.evaluateWithReasoning(
+      finalState,
+      reasoning || '',
+      req,
+    );
+    const caseData = caseStore.getCaseById(finalState.caseId);
+    const ending = caseData?.endings?.[endingType] || '';
+    res.json({ endingType, ending, truth: caseData?.truth || '', reasoningScore, reasoningComment });
+  } catch (err) {
+    next(err);
   }
-  const finalState = { ...state, caseId: state?.caseId || caseId || 'preset' };
-  const endingType = gameEngine.evaluateEnding(finalState);
-  const caseData = caseStore.getCaseById(finalState.caseId);
-  const ending = caseData?.endings?.[endingType] || '';
-  res.json({ endingType, ending, truth: caseData?.truth || '' });
 });
 
 router.post('/generate-case', async (req, res, next) => {

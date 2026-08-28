@@ -7,6 +7,7 @@ import DetectiveBoard from '../components/Social/DetectiveBoard';
 export default function ResultPage() {
   const {
     endingType, endingText, truth, clues,
+    reasoningText, reasoningScore, reasoningComment,
     fingerprint, companion, gameMode, caseData,
     userId, startTime, setPage, resetGame,
     loading, setLoading,
@@ -70,6 +71,9 @@ export default function ResultPage() {
         clues={clues}
         companionName={gameMode === 'team' ? companion?.name : undefined}
         gameMode={gameMode}
+        reasoningText={reasoningText}
+        reasoningScore={reasoningScore}
+        reasoningComment={reasoningComment}
       />
 
       {board && <DetectiveBoard board={board} />}

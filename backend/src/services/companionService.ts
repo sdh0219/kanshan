@@ -1,7 +1,18 @@
 import { agentApi } from './agentApi.js';
 import { companionPromptTemplate } from '../prompts/companion.js';
 import { companionTemplates } from '../data/companionTemplates.js';
+import { rolePlayTrim } from '../utils/rolePlay.js';
 import type { FingerprintResult } from './fingerprintService.js';
+
+// 检索增强模型常见的书面语/讲解体特征，命中则视为不合格台词
+const QA_MARKERS = /根据|如下|以下是|综上|参考资料|首先[，,]|其次[，,]|[一二三四五六]、|总[的之]|需要注意/;
+
+const GENERIC_LINES = [
+  '等一下，你刚才说的这一点有点意思……我再想想。',
+  '嗯……从我的视角看，这里可能还有另一层意思。',
+  '这条信息先记下，感觉它和前面的线索对不上。',
+  '我有个不太一样的直觉，你先别急着下结论。',
+];
 
 export interface Companion {
   name: string;
@@ -9,6 +20,7 @@ export interface Companion {
   strength: string;
   speech_style: string;
   complement_dim: string;
+  complement_dims?: string[];
   intro: string;
 }
 
@@ -17,9 +29,15 @@ export function generateCompanion(fingerprint: FingerprintResult): Companion {
   const sorted = [...dims].sort((a, b) => a.score - b.score);
   const weakestTwo = sorted.slice(0, 2);
   const template = matchTemplate(weakestTwo);
+  // 维度名形如「逻辑-感性」，取右侧 token（感性/微观/实践/批判/广度）
+  // 作为搭档能发现的线索维度标记，与案件的 requires_dim 对齐
+  const complementDims = weakestTwo
+    .map(d => (d.name.split('-')[1] || '').trim())
+    .filter(Boolean);
   return {
     ...template,
     complement_dim: weakestTwo.map(d => d.toward).join(' + '),
+    complement_dims: complementDims,
     intro: template.intro,
   };
 }
@@ -48,9 +66,15 @@ export async function generateCompanionIntro(
   try {
     const intro = await agentApi.chat([
       { role: 'system', content: prompt },
-      { role: 'user', content: '案件即将开始，请用2-3句话做自我介绍。' },
+      { role: 'user', content: '案件即将开始，请用2-3句话、60字以内做自我介绍。不要科普，不要列条目。' },
     ]);
-    return intro;
+    const trimmed = rolePlayTrim(intro, 120);
+    // 直答模型是检索增强的，容易同题成知乎回答体：自检不合格就回退到预设台词
+    const looksLikeSelfIntro = trimmed.includes(companion.name)
+      && trimmed.length >= 10
+      && trimmed.length <= 130
+      && !QA_MARKERS.test(trimmed);
+    return looksLikeSelfIntro ? trimmed : companion.intro;
   } catch (err) {
     console.error(`[CompanionService] 搭档介绍生成失败，使用模板: ${(err as Error).message}`);
     return companion.intro;
@@ -88,9 +112,13 @@ export async function companionAction(
   try {
     const reply = await agentApi.chat([
       { role: 'system', content: prompt },
-      { role: 'user', content: playerInput },
+      { role: 'user', content: `${playerInput}（请以${companion.name}的口吻、1-3句话、60字以内回应，不要科普）` },
     ]);
-    return reply;
+    const trimmed = rolePlayTrim(reply, 90);
+    if (QA_MARKERS.test(trimmed)) {
+      return GENERIC_LINES[Math.floor(Math.random() * GENERIC_LINES.length)];
+    }
+    return trimmed;
   } catch (err) {
     console.error(`[CompanionService] 搭档回复失败，使用预设回复: ${(err as Error).message}`);
     const fallbacks: Record<string, string> = {

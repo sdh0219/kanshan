@@ -14,6 +14,7 @@ interface DialogueEntry {
   role: 'player' | 'npc' | 'companion' | 'kanshan';
   content: string;
   npcId?: string;
+  isExclusive?: boolean;
 }
 
 interface GameState {
@@ -31,6 +32,9 @@ interface GameState {
   endingType: string | null;
   endingText: string | null;
   truth: string | null;
+  reasoningText: string | null;
+  reasoningScore: number | null;
+  reasoningComment: string | null;
   startTime: number;
   loading: boolean;
   error: string | null;
@@ -47,6 +51,7 @@ interface GameState {
   addDialogue: (entry: DialogueEntry) => void;
   setCurrentNpc: (id: string | null) => void;
   setEnding: (type: string, text: string, truth: string) => void;
+  setReasoningResult: (text: string, score?: number, comment?: string) => void;
   startTimer: () => void;
   setLoading: (loading: boolean) => void;
   setError: (error: string | null) => void;
@@ -63,6 +68,9 @@ const initialGame = {
   endingType: null,
   endingText: null,
   truth: null,
+  reasoningText: null,
+  reasoningScore: null,
+  reasoningComment: null,
   startTime: 0,
 };
 
@@ -92,6 +100,7 @@ export const useGameStore = create<GameState>((set) => ({
   addDialogue: (entry) => set((s) => ({ dialogues: [...s.dialogues, entry] })),
   setCurrentNpc: (currentNpcId) => set({ currentNpcId }),
   setEnding: (endingType, endingText, truth) => set({ endingType, endingText, truth }),
+  setReasoningResult: (text, score, comment) => set({ reasoningText: text, reasoningScore: score ?? null, reasoningComment: comment ?? null }),
   startTimer: () => set({ startTime: Date.now() }),
   setLoading: (loading) => set({ loading }),
   setError: (error) => set({ error }),

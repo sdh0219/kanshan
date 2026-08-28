@@ -303,7 +303,7 @@ export default function ArchivePage() {
                 <span>涉案人物 {c.npc_count || 3}</span>
                 <span>搜证方向 {c.search_direction_count || 4}</span>
                 <span>关键证据 {c.key_evidence_count || 3}</span>
-                {c.source_topic && (
+                {c.source_topic && !/\?{3,}/.test(c.source_topic) && (
                   <span className="text-[#8a6d35]">
                     {c.source === 'custom' ? '投稿事件' : '源自'}：{c.source_topic}
                   </span>

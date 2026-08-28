@@ -28,7 +28,7 @@ export default function SearchPanel({ keyword, setKeyword, onSearch, results, lo
           value={keyword}
           onChange={(e) => setKeyword(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && onSearch()}
-          placeholder="输入关键词，在知乎真实内容中搜证..."
+          placeholder="自由输入关键词，在知乎真实内容中搜证..."
           className="input-detective flex-1 px-4 py-2.5 text-sm"
         />
         <button
@@ -42,17 +42,12 @@ export default function SearchPanel({ keyword, setKeyword, onSearch, results, lo
 
       {hints && hints.length > 0 && (
         <div className="mb-4">
-          <p className="text-xs text-[#5a6478] mb-2">看山的调查方向提示（点击填入）：</p>
-          <div className="flex flex-wrap gap-2">
+          <p className="text-xs text-[#5a6478] mb-2">看山的直觉提示（方向仅供参考，具体关键词自己想）：</p>
+          <div className="space-y-1.5">
             {hints.map((h, i) => (
-              <button
-                key={i}
-                onClick={() => setKeyword(h.keyword)}
-                className="text-xs px-3 py-1.5 bg-[#0a0c10]/60 border border-[#232a3b] rounded text-[#8a94a8] hover:border-[#8a6d35] hover:text-[#d4a24c] transition"
-                title={h.hint}
-              >
-                {h.keyword}
-              </button>
+              <p key={i} className="text-xs px-3 py-1.5 bg-[#0a0c10]/60 border-l-2 border-[#8a6d35]/50 rounded-r text-[#8a94a8] italic">
+                {h.hint}
+              </p>
             ))}
           </div>
         </div>

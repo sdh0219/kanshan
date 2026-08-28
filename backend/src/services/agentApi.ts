@@ -9,16 +9,29 @@ interface ChatMessage {
   content: string;
 }
 
+const REQUEST_TIMEOUT_MS = 30000;
+
 export async function chat(messages: ChatMessage[]): Promise<string> {
-  const resp = await fetch(`${API_BASE}/v1/chat/completions`, {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${ACCESS_SECRET}`,
-      'X-Request-Timestamp': String(Math.floor(Date.now() / 1000)),
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ model: MODEL, messages }),
-  });
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+  let resp;
+  try {
+    resp = await fetch(`${API_BASE}/v1/chat/completions`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${ACCESS_SECRET}`,
+        'X-Request-Timestamp': String(Math.floor(Date.now() / 1000)),
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ model: MODEL, messages }),
+      signal: controller.signal,
+    });
+  } catch (err: any) {
+    if (err?.name === 'AbortError') throw new Error(`直答Agent请求超时(${REQUEST_TIMEOUT_MS / 1000}s)`);
+    throw err;
+  } finally {
+    clearTimeout(timer);
+  }
   if (!resp.ok) {
     const errText = await resp.text().catch(() => '');
     console.error(`[AgentAPI] ${resp.status}: ${errText.substring(0, 200)}`);

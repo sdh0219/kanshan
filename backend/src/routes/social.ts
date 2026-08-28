@@ -47,16 +47,15 @@ router.post('/detective-board', async (req, res, next) => {
           const searchResult = await zhihuApi.searchContent(q.query, req);
           const items = searchResult?.Data?.Items || searchResult?.data?.items || searchResult?.data || [];
           const topItem = Array.isArray(items) ? items[0] : null;
-          const topUser = topItem?.Author || topItem?.author || topItem?.target?.author;
+          // 搜索接口返回扁平的 PascalCase 字段（AuthorName/AuthorAvatar/Url）
+          const name = topItem?.AuthorName || topItem?.author?.name || topItem?.target?.author?.name || '';
+          const avatar = topItem?.AuthorAvatar || topItem?.author?.avatar_url || '';
+          const url = topItem?.Url || topItem?.url || topItem?.target?.url || '';
           return {
             query: q.query,
             reason: q.reason,
             complementDim: q.complement_dim,
-            zhihuUser: topUser ? {
-              name: topUser.name || topUser.fullname || '未知用户',
-              avatar: topUser.avatar_url || '',
-              url: topUser.url || topUser.profile_url || '',
-            } : null,
+            zhihuUser: name ? { name, avatar, url } : null,
           };
         } catch {
           return { query: q.query, reason: q.reason, complementDim: q.complement_dim, zhihuUser: null };

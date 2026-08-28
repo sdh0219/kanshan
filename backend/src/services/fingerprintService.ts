@@ -31,8 +31,14 @@ export async function analyzeFingerprint(userId: string, req?: Request): Promise
     if (cached) return cached;
   }
 
-  const searchData = await zhihuApi.searchContent(userId, req);
-  const answersText = extractAnswersText(searchData);
+  let answersText = '';
+  try {
+    const searchData = await zhihuApi.searchContent(userId, req);
+    answersText = extractAnswersText(searchData);
+  } catch (err) {
+    console.error(`[Fingerprint] 获取用户内容失败，使用默认画像: ${(err as Error).message}`);
+    return getFallbackFingerprint(userId);
+  }
 
   if (!answersText.trim()) {
     return getFallbackFingerprint(userId);
@@ -43,11 +49,25 @@ export async function analyzeFingerprint(userId: string, req?: Request): Promise
     { role: 'user' as const, content: `以下是用户 "${userId}" 相关的知乎回答内容：\n\n${answersText}` },
   ];
 
-  const result = await agentApi.chatJSON(messages);
-
-  if (cache) cache.set(cacheKey, result);
-
-  return result;
+  try {
+    const result = await agentApi.chatJSON(messages);
+    // 直答模型经常无视输出 schema，字段不合规就回退默认画像
+    const dims = result?.dimensions;
+    const dimsValid = Array.isArray(dims) && dims.length === 5
+      && dims.every((d: any) => d && typeof d.name === 'string' && typeof d.score === 'number');
+    const profileValid = result?.detective_profile
+      && Array.isArray(result.detective_profile.strength)
+      && Array.isArray(result.detective_profile.weakness);
+    if (!dimsValid || !profileValid) {
+      console.error('[Fingerprint] Agent 输出不符合 schema，使用默认画像');
+      return getFallbackFingerprint(userId);
+    }
+    if (cache) cache.set(cacheKey, result);
+    return result;
+  } catch (err) {
+    console.error(`[Fingerprint] Agent 分析失败，使用默认画像: ${(err as Error).message}`);
+    return getFallbackFingerprint(userId);
+  }
 }
 
 function extractAnswersText(searchData: any): string {

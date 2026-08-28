@@ -2,6 +2,8 @@ import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
 import NodeCache from 'node-cache';
+import path from 'path';
+import fs from 'fs';
 
 import fingerprintRouter from './routes/fingerprint.js';
 import companionRouter from './routes/companion.js';
@@ -30,6 +32,22 @@ app.use('/api/companion', companionRouter);
 app.use('/api/game', gameRouter);
 app.use('/api/social', socialRouter);
 app.use('/api/archive', archiveRouter);
+
+// 合并部署：存在前端构建产物时，由后端直接托管（单服务上线，免 CORS 配置）
+const frontendDist = path.join(process.cwd(), '..', 'frontend', 'dist');
+const frontendIndex = path.join(frontendDist, 'index.html');
+if (fs.existsSync(frontendIndex)) {
+  app.use(express.static(frontendDist));
+  // SPA 回退：非 API 的 GET 请求一律返回 index.html，交给前端路由
+  app.use((req, res, next) => {
+    if (req.method === 'GET' && !req.path.startsWith('/api') && req.path !== '/health') {
+      res.sendFile(frontendIndex);
+    } else {
+      next();
+    }
+  });
+  console.log(`[Deploy] 前端静态资源已挂载: ${frontendDist}`);
+}
 
 app.use((req, res) => {
   res.status(404).json({ error: 'Not Found', path: req.path });
