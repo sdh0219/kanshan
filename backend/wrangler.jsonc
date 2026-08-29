@@ -1,0 +1,27 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "kanshan-detective",
+  "main": "src/worker.ts",
+  "compatibility_date": "2025-09-01",
+  "compatibility_flags": ["nodejs_compat"],
+  "assets": {
+    "directory": "../frontend/dist",
+    "binding": "ASSETS",
+    "not_found_handling": "single-page-application"
+  },
+  "kv_namespaces": [
+    {
+      "binding": "DATA",
+      "id": "PLACEHOLDER_KV_ID"
+    }
+  ],
+  "vars": {
+    "ZHIHU_API_BASE": "https://developer.zhihu.com",
+    "AGENT_API_BASE": "https://developer.zhihu.com",
+    "AGENT_MODEL": "zhida-fast-1p5",
+    "NODE_ENV": "production"
+  },
+  "dev": {
+    "port": 3001
+  }
+}

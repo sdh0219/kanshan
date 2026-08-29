@@ -1,7 +1,7 @@
 import { agentApi } from './agentApi.js';
 import { zhihuApi } from './zhihuApi.js';
 import { fingerprintPrompt } from '../prompts/fingerprint.js';
-import type { Request } from 'express';
+import { cache } from '../utils/runtime.js';
 
 export interface FingerprintDimension {
   name: string;
@@ -23,17 +23,14 @@ export interface FingerprintResult {
   keywords: string[];
 }
 
-export async function analyzeFingerprint(userId: string, req?: Request): Promise<FingerprintResult> {
-  const cache = (req as any)?.app?.locals?.cache;
+export async function analyzeFingerprint(userId: string): Promise<FingerprintResult> {
   const cacheKey = `fingerprint:${userId}`;
-  if (cache) {
-    const cached = cache.get(cacheKey) as FingerprintResult | undefined;
-    if (cached) return cached;
-  }
+  const cached = cache.get(cacheKey) as FingerprintResult | undefined;
+  if (cached) return cached;
 
   let answersText = '';
   try {
-    const searchData = await zhihuApi.searchContent(userId, req);
+    const searchData = await zhihuApi.searchContent(userId);
     answersText = extractAnswersText(searchData);
   } catch (err) {
     console.error(`[Fingerprint] 获取用户内容失败，使用默认画像: ${(err as Error).message}`);
@@ -62,7 +59,7 @@ export async function analyzeFingerprint(userId: string, req?: Request): Promise
       console.error('[Fingerprint] Agent 输出不符合 schema，使用默认画像');
       return getFallbackFingerprint(userId);
     }
-    if (cache) cache.set(cacheKey, result);
+    cache.set(cacheKey, result);
     return result;
   } catch (err) {
     console.error(`[Fingerprint] Agent 分析失败，使用默认画像: ${(err as Error).message}`);

@@ -5,3 +5,10 @@ data/*.json
 *.log
 .DS_Store
 Thumbs.db
+
+# Wrangler / Cloudflare Workers 本地状态与密钥
+.dev.vars
+.wrangler/
+...render_env_tmp.json
+smoke-test.ps1
+smoke-result.txt

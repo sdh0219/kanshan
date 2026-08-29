@@ -1,16 +1,16 @@
-import fetch from 'node-fetch';
-import type { Request } from 'express';
-
-const API_BASE = process.env.ZHIHU_API_BASE || 'https://developer.zhihu.com';
-const ACCESS_SECRET = process.env.ZHIHU_ACCESS_SECRET || '';
+import { cache, env } from '../utils/runtime.js';
 
 const RATE_LIMIT_CODE = 30001;
 const RETRY_DELAYS = [1500, 3000];
 const HOT_LIST_TTL = 1800;
 
+function apiBase() {
+  return env('ZHIHU_API_BASE') || 'https://developer.zhihu.com';
+}
+
 function getHeaders() {
   return {
-    Authorization: `Bearer ${ACCESS_SECRET}`,
+    Authorization: `Bearer ${env('ZHIHU_ACCESS_SECRET') || ''}`,
     'X-Request-Timestamp': String(Math.floor(Date.now() / 1000)),
     'Content-Type': 'application/json',
   };
@@ -21,8 +21,8 @@ function sleep(ms: number) {
 }
 
 async function fetchOnce(path: string): Promise<any> {
-  const url = path.startsWith('http') ? path : `${API_BASE}${path}`;
-  const resp = await fetch(url, { headers: getHeaders() });
+  const url = path.startsWith('http') ? path : `${apiBase()}${path}`;
+  const resp = await fetch(url, { headers: getHeaders() } as any);
   if (!resp.ok) {
     const errText = await resp.text().catch(() => '');
     throw Object.assign(new Error(`知乎API错误 ${resp.status}: ${path}`), { statusCode: resp.status, body: errText });
@@ -39,19 +39,16 @@ async function fetchOnce(path: string): Promise<any> {
   return data;
 }
 
-async function request<T = any>(path: string, req?: Request, ttl = 600): Promise<T> {
-  const cache = (req as any)?.app?.locals?.cache;
+async function request<T = any>(path: string, ttl = 600): Promise<T> {
   const cacheKey = `zhihu:${path}`;
-  if (cache) {
-    const cached = cache.get(cacheKey) as T | undefined;
-    if (cached !== undefined) return cached;
-  }
+  const cached = cache.get(cacheKey) as T | undefined;
+  if (cached !== undefined) return cached;
 
   let lastErr: any;
   for (let attempt = 0; attempt <= RETRY_DELAYS.length; attempt++) {
     try {
       const data = await fetchOnce(path) as T;
-      if (cache) cache.set(cacheKey, data, ttl);
+      cache.set(cacheKey, data, ttl);
       return data;
     } catch (err: any) {
       lastErr = err;
@@ -67,32 +64,32 @@ async function request<T = any>(path: string, req?: Request, ttl = 600): Promise
   throw lastErr;
 }
 
-export async function searchContent(query: string, req?: Request) {
+export async function searchContent(query: string) {
   const count = 10;
   const path = `/api/v1/content/zhihu_search?Query=${encodeURIComponent(query)}&Count=${count}`;
-  return request(path, req);
+  return request(path);
 }
 
-export async function globalSearch(query: string, req?: Request) {
+export async function globalSearch(query: string) {
   const count = 10;
   const path = `/api/v1/content/global_search?Query=${encodeURIComponent(query)}&Count=${count}`;
-  return request(path, req);
+  return request(path);
 }
 
-export async function getHotList(req?: Request) {
-  return request(`/api/v1/content/hot_list?Limit=30`, req, HOT_LIST_TTL);
+export async function getHotList() {
+  return request(`/api/v1/content/hot_list?Limit=30`, HOT_LIST_TTL);
 }
 
-export async function getStories(category: string, req?: Request) {
-  return request(`/api/v1/story/${category}`, req);
+export async function getStories(category: string) {
+  return request(`/api/v1/story/${category}`);
 }
 
-export async function getFollowingFeed(req?: Request) {
-  return request(`/openapi/feed/following`, req);
+export async function getFollowingFeed() {
+  return request(`/openapi/feed/following`);
 }
 
-export async function getUserFollowing(req?: Request) {
-  return request(`/openapi/user/following`, req);
+export async function getUserFollowing() {
+  return request(`/openapi/user/following`);
 }
 
 export const zhihuApi = { searchContent, globalSearch, getHotList, getStories, getFollowingFeed, getUserFollowing };

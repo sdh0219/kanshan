@@ -1,36 +1,32 @@
-import fetch from 'node-fetch';
+import { env } from '../utils/runtime.js';
 
-const API_BASE = process.env.AGENT_API_BASE || 'https://developer.zhihu.com';
-const ACCESS_SECRET = process.env.ZHIHU_ACCESS_SECRET || '';
-const MODEL = process.env.AGENT_MODEL || 'zhida-fast-1p5';
+const REQUEST_TIMEOUT_MS = 30000;
 
 interface ChatMessage {
   role: 'system' | 'user' | 'assistant';
   content: string;
 }
 
-const REQUEST_TIMEOUT_MS = 30000;
-
 export async function chat(messages: ChatMessage[]): Promise<string> {
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+  const apiBase = env('AGENT_API_BASE') || 'https://developer.zhihu.com';
+  const model = env('AGENT_MODEL') || 'zhida-fast-1p5';
   let resp;
   try {
-    resp = await fetch(`${API_BASE}/v1/chat/completions`, {
+    resp = await fetch(`${apiBase}/v1/chat/completions`, {
       method: 'POST',
       headers: {
-        Authorization: `Bearer ${ACCESS_SECRET}`,
+        Authorization: `Bearer ${env('ZHIHU_ACCESS_SECRET') || ''}`,
         'X-Request-Timestamp': String(Math.floor(Date.now() / 1000)),
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ model: MODEL, messages }),
-      signal: controller.signal,
+      body: JSON.stringify({ model, messages }),
+      signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
     });
   } catch (err: any) {
-    if (err?.name === 'AbortError') throw new Error(`直答Agent请求超时(${REQUEST_TIMEOUT_MS / 1000}s)`);
+    if (err?.name === 'AbortError' || err?.message?.includes('abort')) {
+      throw new Error(`直答Agent请求超时(${REQUEST_TIMEOUT_MS / 1000}s)`);
+    }
     throw err;
-  } finally {
-    clearTimeout(timer);
   }
   if (!resp.ok) {
     const errText = await resp.text().catch(() => '');

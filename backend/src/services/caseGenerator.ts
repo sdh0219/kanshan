@@ -1,7 +1,6 @@
 import { agentApi } from './agentApi.js';
 import { zhihuApi } from './zhihuApi.js';
 import { caseGenPrompt } from '../prompts/caseGen.js';
-import type { Request } from 'express';
 
 export interface CaseTopic {
   title: string;
@@ -24,7 +23,7 @@ function normalizeGeneratedCase(caseData: any, topic: CaseTopic): any {
   return normalized;
 }
 
-export async function generateCaseFromTopic(topic: CaseTopic, req?: Request) {
+export async function generateCaseFromTopic(topic: CaseTopic) {
   const prompt = caseGenPrompt
     .replace('{{hot_topic_title}}', topic.title)
     .replace('{{hot_topic_summary}}', topic.excerpt || '（无摘要，请基于话题标题自由发挥）');
@@ -37,8 +36,8 @@ export async function generateCaseFromTopic(topic: CaseTopic, req?: Request) {
   return { case: normalizeGeneratedCase(caseData, topic), sourceTopic: topic };
 }
 
-export async function generateCase(hotTopicIndex: number, req?: Request) {
-  const hotList = await zhihuApi.getHotList(req);
+export async function generateCase(hotTopicIndex: number) {
+  const hotList = await zhihuApi.getHotList();
   const items = hotList?.Data?.Items || hotList?.data?.items || [];
   const list = (Array.isArray(items) ? items : []).slice(0, 8);
   const topic: any = list[hotTopicIndex] || list[0];
@@ -52,11 +51,10 @@ export async function generateCase(hotTopicIndex: number, req?: Request) {
       title: topic.Title || topic.title || topic.target?.title || '未知话题',
       excerpt: topic.Summary || topic.Excerpt || topic.excerpt || topic.target?.excerpt || '',
     },
-    req,
   );
 }
 
-export async function generateCaseFromUserInput(userInput: string, req?: Request) {
+export async function generateCaseFromUserInput(userInput: string) {
   const prompt = caseGenPrompt
     .replace('{{hot_topic_title}}', '用户自定义事件')
     .replace('{{hot_topic_summary}}', userInput);

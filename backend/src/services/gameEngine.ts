@@ -4,7 +4,6 @@ import { npcPromptTemplate } from '../prompts/npc.js';
 import { evaluatePromptTemplate } from '../prompts/evaluate.js';
 import { rolePlayTrim } from '../utils/rolePlay.js';
 import { caseStore } from './caseStore.js';
-import type { Request } from 'express';
 
 // 检索增强模型常见的书面语/讲解体特征，命中则视为不合格台词
 const NPC_QA_MARKERS = /根据|如下|以下是|综上|参考资料|首先[，,]|其次[，,]|[一二三四五六]、|需要注意/;
@@ -41,11 +40,11 @@ export interface EvaluateResult {
   reasoningComment?: string;
 }
 
-function getCaseData(caseId: string) {
+async function getCaseData(caseId: string) {
   return caseStore.getCaseById(caseId);
 }
 
-export function getCase(caseId?: string) {
+export async function getCase(caseId?: string) {
   return getCaseData(caseId || 'preset');
 }
 
@@ -87,18 +86,17 @@ function matchesDirection(keyword: string, directionKeyword: string): boolean {
 export async function searchForClues(
   keyword: string,
   state: GameState & { caseId?: string },
-  req?: Request,
 ): Promise<{ results: any[]; clue?: Clue }> {
   let results: any[] = [];
   try {
-    const searchResults = await zhihuApi.searchContent(keyword, req);
+    const searchResults = await zhihuApi.searchContent(keyword);
     const items = searchResults?.Data?.Items || searchResults?.data?.items || searchResults?.data || [];
     results = Array.isArray(items) ? items.slice(0, 5) : [];
   } catch (err) {
     console.error(`[GameEngine] 搜索失败，使用预设数据: ${(err as Error).message}`);
   }
 
-  const caseData = getCaseData(state?.caseId || 'preset');
+  const caseData = await getCaseData(state?.caseId || 'preset');
   if (!caseData) return { results };
 
   const directions: any[] = caseData.search_directions || [];
@@ -146,7 +144,7 @@ export async function talkToNpc(
   state: GameState & { caseId?: string },
   companionFollowup?: string,
 ): Promise<string> {
-  const caseData = getCaseData(state?.caseId || 'preset');
+  const caseData = await getCaseData(state?.caseId || 'preset');
   const npcConfig = (caseData?.npcs || []).find((n: any) => n.id === npcId);
   if (!npcConfig) throw new Error(`NPC ${npcId} 不存在`);
 
@@ -208,10 +206,10 @@ export async function talkToNpc(
   }
 }
 
-export function evaluateEnding(state: GameState & { caseId?: string }): 'good' | 'neutral' | 'bad' {
+export async function evaluateEnding(state: GameState & { caseId?: string }): Promise<'good' | 'neutral' | 'bad'> {
   const keyClues = state.clues.filter(c => c.requiresDim);
   const count = keyClues.length;
-  const caseData = getCaseData(state?.caseId || 'preset');
+  const caseData = await getCaseData(state?.caseId || 'preset');
   const threshold = caseData?.key_evidence_count || 3;
   if (count >= threshold) return 'good';
   if (count >= 1) return 'neutral';
@@ -254,10 +252,9 @@ function genericComment(endingType: 'good' | 'neutral' | 'bad'): string {
 export async function evaluateWithReasoning(
   state: GameState & { caseId?: string },
   reasoning: string,
-  req?: Request,
 ): Promise<EvaluateResult> {
-  const caseData = getCaseData(state?.caseId || 'preset');
-  let endingType = evaluateEnding(state);
+  const caseData = await getCaseData(state?.caseId || 'preset');
+  let endingType = await evaluateEnding(state);
   let reasoningScore: number | undefined;
   let reasoningComment: string | undefined;
 

@@ -1,4 +1,6 @@
-const BASE = '/api';
+// 默认走同域 /api（Worker 通过 ASSETS 一体化托管前端，无需跨域）；
+// 若前后端分域部署，build 时设置 VITE_API_BASE 指向 Worker 公网地址即可
+const BASE = import.meta.env.VITE_API_BASE || '/api';
 
 async function postJSON(path: string, body: Record<string, any>) {
   const resp = await fetch(`${BASE}${path}`, {

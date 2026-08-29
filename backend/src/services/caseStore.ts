@@ -1,6 +1,5 @@
-import fs from 'fs';
-import path from 'path';
 import { presetCase } from '../data/presetCase.js';
+import { getKV } from '../utils/runtime.js';
 
 export interface CaseRecord {
   case_id: string;
@@ -13,7 +12,7 @@ export interface CaseRecord {
   [key: string]: any;
 }
 
-interface ExploreRecord {
+export interface ExploreRecord {
   record_id: string;
   user_id: string;
   user_display_name: string;
@@ -29,84 +28,85 @@ interface ExploreRecord {
   finished_at: string;
 }
 
-const DATA_DIR = path.join(process.cwd(), 'data');
-const CASES_FILE = path.join(DATA_DIR, 'cases.json');
-const RECORDS_FILE = path.join(DATA_DIR, 'records.json');
+/**
+ * 存储层：Cloudflare KV（案件与探案记录量级极小，单键 JSON 数组即可）。
+ * 预设案件始终由代码注入，不落库——KV 是临时存储（免费层无持久磁盘的等价物）。
+ */
+const CASES_KEY = 'kanshan:cases';
+const RECORDS_KEY = 'kanshan:records';
+const PRESET_CREATED_AT = '2026-08-20T00:00:00.000Z';
 
-function ensureDataDir() {
-  if (!fs.existsSync(DATA_DIR)) {
-    fs.mkdirSync(DATA_DIR, { recursive: true });
-  }
-}
-
-function readJSON<T>(file: string, fallback: T): T {
+async function readGeneratedCases(): Promise<CaseRecord[]> {
+  const raw = await getKV().get(CASES_KEY);
+  if (!raw) return [];
   try {
-    if (!fs.existsSync(file)) return fallback;
-    return JSON.parse(fs.readFileSync(file, 'utf-8')) as T;
+    const arr = JSON.parse(raw);
+    return Array.isArray(arr) ? arr : [];
   } catch {
-    return fallback;
+    return [];
   }
 }
 
-function writeJSON(file: string, data: any) {
-  ensureDataDir();
-  fs.writeFileSync(file, JSON.stringify(data, null, 2), 'utf-8');
+async function writeGeneratedCases(cases: CaseRecord[]) {
+  await getKV().put(CASES_KEY, JSON.stringify(cases));
 }
 
-function loadCases(): CaseRecord[] {
-  const stored = readJSON<CaseRecord[]>(CASES_FILE, []);
-  const hasPreset = stored.some(c => c.case_id === 'preset');
-  if (!hasPreset) {
-    stored.unshift({
-      ...presetCase,
-      source: 'preset',
-      created_at: new Date().toISOString(),
-    });
-    writeJSON(CASES_FILE, stored);
+async function readRecords(): Promise<ExploreRecord[]> {
+  const raw = await getKV().get(RECORDS_KEY);
+  if (!raw) return [];
+  try {
+    const arr = JSON.parse(raw);
+    return Array.isArray(arr) ? arr : [];
+  } catch {
+    return [];
   }
-  return stored;
 }
 
-export function listCases(): CaseRecord[] {
-  return loadCases();
+async function writeRecords(records: ExploreRecord[]) {
+  await getKV().put(RECORDS_KEY, JSON.stringify(records));
 }
 
-export function getCaseById(caseId: string): CaseRecord | null {
-  return loadCases().find(c => c.case_id === caseId) || null;
+export async function listCases(): Promise<CaseRecord[]> {
+  const generated = await readGeneratedCases();
+  const preset: CaseRecord = { ...presetCase, source: 'preset', created_at: PRESET_CREATED_AT };
+  return [preset, ...generated];
 }
 
-export function saveGeneratedCase(caseData: any, sourceTopic?: string): CaseRecord {
-  const cases = loadCases();
-  const caseId = `case_${Date.now()}`;
+export async function getCaseById(caseId: string): Promise<CaseRecord | null> {
+  const cases = await listCases();
+  return cases.find(c => c.case_id === caseId) || null;
+}
+
+export async function saveGeneratedCase(caseData: any, sourceTopic?: string): Promise<CaseRecord> {
+  const cases = await readGeneratedCases();
   const record: CaseRecord = {
     ...caseData,
-    case_id: caseId,
+    case_id: `case_${Date.now()}`,
     source: 'hotlist',
     source_topic: sourceTopic,
     created_at: new Date().toISOString(),
   };
   cases.push(record);
-  writeJSON(CASES_FILE, cases);
+  await writeGeneratedCases(cases);
   return record;
 }
 
-export function saveCustomCase(caseData: any, createdBy: string, sourceTopic?: string): CaseRecord {
-  const cases = loadCases();
-  const caseId = `custom_${Date.now()}`;
+export async function saveCustomCase(caseData: any, createdBy: string, sourceTopic?: string): Promise<CaseRecord> {
+  const cases = await readGeneratedCases();
   const record: CaseRecord = {
     ...caseData,
-    case_id: caseId,
+    case_id: `custom_${Date.now()}`,
     source: 'custom',
     source_topic: sourceTopic,
     created_by: createdBy,
     created_at: new Date().toISOString(),
   };
   cases.push(record);
-  writeJSON(CASES_FILE, cases);
+  await writeGeneratedCases(cases);
   return record;
 }
 
-export function saveExploreRecord(input: {
+export async function saveExploreRecord(input: {
   user_id: string;
   user_display_name?: string;
   case_id: string;
@@ -118,8 +118,8 @@ export function saveExploreRecord(input: {
   key_clue_count: number;
   companion_clue_count: number;
   duration_seconds?: number;
-}): ExploreRecord {
-  const records = readJSON<ExploreRecord[]>(RECORDS_FILE, []);
+}): Promise<ExploreRecord> {
+  const records = await readRecords();
   const record: ExploreRecord = {
     record_id: `rec_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`,
     user_id: input.user_id,
@@ -136,12 +136,13 @@ export function saveExploreRecord(input: {
     finished_at: new Date().toISOString(),
   };
   records.push(record);
-  writeJSON(RECORDS_FILE, records);
+  await writeRecords(records);
   return record;
 }
 
-export function getUserRecords(userId: string): ExploreRecord[] {
-  return readJSON<ExploreRecord[]>(RECORDS_FILE, [])
+export async function getUserRecords(userId: string): Promise<ExploreRecord[]> {
+  const records = await readRecords();
+  return records
     .filter(r => r.user_id === userId)
     .sort((a, b) => new Date(b.finished_at).getTime() - new Date(a.finished_at).getTime());
 }
@@ -168,10 +169,10 @@ export function computeStats(records: ExploreRecord[]): RecordsStats {
   };
 }
 
-export function removeUserRecords(userId: string): number {
-  const records = readJSON<ExploreRecord[]>(RECORDS_FILE, []);
+export async function removeUserRecords(userId: string): Promise<number> {
+  const records = await readRecords();
   const remaining = records.filter(r => r.user_id !== userId);
-  writeJSON(RECORDS_FILE, remaining);
+  await writeRecords(remaining);
   return records.length - remaining.length;
 }
 
