@@ -1,0 +1,22 @@
+services:
+  - type: web
+    name: kanshan
+    runtime: node
+    plan: free
+    region: singapore
+    branch: main
+    buildCommand: cd backend && npm install && npm run build && cd ../frontend && npm install && npm run build
+    startCommand: cd backend && npm start
+    envVars:
+      - key: ZHIHU_API_BASE
+        value: https://developer.zhihu.com
+      - key: ZHIHU_ACCESS_SECRET
+        sync: false
+      - key: AGENT_API_BASE
+        value: https://developer.zhihu.com
+      - key: AGENT_MODEL
+        value: zhida-fast-1p5
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: "10000"
