@@ -50,10 +50,13 @@ export const api = {
     cases: () => getJSON('/archive/cases'),
     case: (caseId: string) => getJSON(`/archive/case?caseId=${encodeURIComponent(caseId)}`),
     hotTopics: () => getJSON('/archive/hot-topics'),
+    stories: () => getJSON('/archive/stories'),
+    generateStory: (workId: string) => postJSON('/archive/generate-story', { workId }),
     generate: (hotTopicIndex: number) => postJSON('/archive/generate', { hotTopicIndex }),
     custom: (userInput: string, userId: string) => postJSON('/archive/custom', { userInput, userId }),
     saveRecord: (data: any) => postJSON('/archive/record', data),
     records: (userId: string) => getJSON(`/archive/records?userId=${encodeURIComponent(userId)}`),
+    quota: () => getJSON('/quota'),
   },
   social: {
     detectiveBoard: (fingerprint: any) => postJSON('/social/detective-board', { fingerprint }),

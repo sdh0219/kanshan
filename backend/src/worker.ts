@@ -136,6 +136,43 @@ app.post('/api/game/generate-case', async (c) => {
   return c.json(result as any);
 });
 
+/* ---------------- 黑客松专用内容接口（官方 skill 0.5.3，无需鉴权）+ 额度 ---------------- */
+
+app.get('/api/archive/stories', async (c) => {
+  try {
+    const raw = await zhihuApi.getHackathonStories();
+    const items = (Array.isArray(raw) ? raw : []).slice(0, 12).map((s: any, i: number) => ({
+      index: i,
+      work_id: s.work_id || '',
+      title: s.title || '未知故事',
+      description: s.description || '',
+      labels: s.labels || [],
+    }));
+    return c.json({ stories: items });
+  } catch (err: any) {
+    console.error(`[Archive] 故事列表不可用: ${err.message}`);
+    return c.json({ stories: [], error: err.message }, 200);
+  }
+});
+
+app.post('/api/archive/generate-story', async (c) => {
+  const { workId } = await c.req.json<any>().catch(() => ({}));
+  if (!workId) return c.json({ error: 'workId 必填' }, 400);
+  const detail = await zhihuApi.getHackathonStoryDetail(String(workId));
+  const { case: caseData, sourceTopic } = await caseGenerator.generateCaseFromStory(detail);
+  const saved = await caseStore.saveGeneratedCase(caseData, sourceTopic);
+  return c.json({ case: saved, sourceTopic });
+});
+
+app.get('/api/quota', async (c) => {
+  try {
+    const data = await zhihuApi.getQuota();
+    return c.json({ quota: data?.Data || data });
+  } catch (err: any) {
+    return c.json({ error: err.message }, 200);
+  }
+});
+
 /* ---------------- 档案室 ---------------- */
 app.get('/api/archive/cases', async (c) => {
   const cases = (await caseStore.listCases()).map(k => ({

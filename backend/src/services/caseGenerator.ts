@@ -73,5 +73,51 @@ export async function generateCaseFromUserInput(userInput: string) {
   };
 }
 
-export const caseGenerator = { generateCase, generateCaseFromTopic, generateCaseFromUserInput };
+/**
+ * 从盐言故事生成探案案件（黑客松专用内容接口，比赛宣传的"故事改编互动叙事"方向）。
+ * 取故事导语+正文前 3000 字作为改编素材，要求保留原作氛围但重写为探案结构。
+ */
+export async function generateCaseFromStory(storyDetail: {
+  chapter_name?: string;
+  introduction?: string;
+  content?: string;
+  author_name?: string;
+  labels?: string[];
+}) {
+  const material = [
+    `标题：${storyDetail.chapter_name || '未知故事'}`,
+    storyDetail.author_name ? `原作者：${storyDetail.author_name}` : '',
+    storyDetail.labels?.length ? `标签：${storyDetail.labels.join('、')}` : '',
+    `导语：${storyDetail.introduction || '（无）'}`,
+    `正文节选：${(storyDetail.content || '').substring(0, 3000)}`,
+  ].filter(Boolean).join('\n');
+
+  const prompt = caseGenPrompt
+    .replace('{{hot_topic_title}}', `盐言故事《${storyDetail.chapter_name || '未知故事'}》`)
+    .replace('{{hot_topic_summary}}', material);
+
+  const caseData = await agentApi.chatJSON([
+    {
+      role: 'system',
+      content: '你是知乎社区的AI剧本作家，擅长把盐言故事改编成探案游戏：保留原作的背景与人物氛围，但把叙事重构为"悬案→搜证→证词→真相"的探案结构，设计合理的凶手、动机与三档结局。改编需尊重原作气质，不照抄原文句子。',
+    },
+    { role: 'user', content: prompt },
+  ]);
+
+  const topic: CaseTopic = {
+    title: `盐言故事《${storyDetail.chapter_name || '未知'}》`,
+    excerpt: storyDetail.introduction || (storyDetail.content || '').substring(0, 80),
+  };
+  return {
+    case: normalizeGeneratedCase(caseData, topic),
+    sourceTopic: topic.title,
+  };
+}
+
+export const caseGenerator = {
+  generateCase,
+  generateCaseFromTopic,
+  generateCaseFromUserInput,
+  generateCaseFromStory,
+};
 export default caseGenerator;

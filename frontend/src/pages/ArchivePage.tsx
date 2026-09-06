@@ -22,6 +22,14 @@ interface HotTopic {
   url?: string;
 }
 
+interface StoryItem {
+  index: number;
+  work_id: string;
+  title: string;
+  description: string;
+  labels: string[];
+}
+
 export default function ArchivePage() {
   const {
     setPage, userId, fingerprint, setCaseData, setGameMode,
@@ -37,6 +45,10 @@ export default function ArchivePage() {
   const [showCustomPanel, setShowCustomPanel] = useState(false);
   const [customInput, setCustomInput] = useState('');
   const [customLoading, setCustomLoading] = useState(false);
+  const [genTab, setGenTab] = useState<'hot' | 'story'>('hot');
+  const [stories, setStories] = useState<StoryItem[]>([]);
+  const [storyId, setStoryId] = useState<string | null>(null);
+  const [storyLoading, setStoryLoading] = useState(false);
 
   const refreshCases = async () => {
     try {
@@ -80,23 +92,45 @@ export default function ArchivePage() {
   };
 
   const handleGenerate = async () => {
-    if (genIndex === null) return;
+    if (genTab === 'hot' && genIndex === null) return;
+    if (genTab === 'story' && !storyId) return;
     setLoading(true);
     setError(null);
     try {
-      const data = await api.archive.generate(genIndex);
+      if (genTab === 'hot') {
+        await api.archive.generate(genIndex!);
+      } else {
+        setStoryLoading(true);
+        await api.archive.generateStory(storyId!);
+        setStoryLoading(false);
+      }
       await refreshCases();
       setShowGenPanel(false);
       setGenIndex(null);
-      setHotTopics([]);
-      api.archive.hotTopics().then((d: any) => {
-        setHotTopics(d.topics || []);
-        setHotFallback(!!d.fallback);
-      }).catch(() => {});
+      setStoryId(null);
     } catch (err: any) {
       setError(err.message);
     } finally {
       setLoading(false);
+      setStoryLoading(false);
+    }
+  };
+
+  const toggleGenPanel = () => {
+    const next = !showGenPanel;
+    setShowGenPanel(next);
+    setShowCustomPanel(false);
+    if (next && stories.length === 0 && genTab === 'story') {
+      api.archive.stories().then((d: any) => setStories(d.stories || [])).catch(() => {});
+    }
+  };
+
+  const switchGenTab = (tab: 'hot' | 'story') => {
+    setGenTab(tab);
+    setGenIndex(null);
+    setStoryId(null);
+    if (tab === 'story' && stories.length === 0) {
+      api.archive.stories().then((d: any) => setStories(d.stories || [])).catch(() => {});
     }
   };
 
@@ -138,10 +172,10 @@ export default function ArchivePage() {
             {showCustomPanel ? '收起投稿' : '＋ 投稿事件'}
           </button>
           <button
-            onClick={() => { setShowGenPanel(!showGenPanel); setShowCustomPanel(false); }}
+            onClick={toggleGenPanel}
             className="btn-ghost px-4 py-2 text-sm"
           >
-            {showGenPanel ? '收起热榜' : '＋ 从热榜新建'}
+            {showGenPanel ? '收起生成' : '＋ AI 新建案件'}
           </button>
         </div>
       </div>
@@ -158,17 +192,42 @@ export default function ArchivePage() {
         </div>
       )}
 
-      {/* 热榜生成面板 */}
+      {/* AI 生成案件面板（热榜 / 盐言故事双素材源） */}
       {showGenPanel && (
         <div className="case-card p-6 anim-fade-up">
           <div className="flex items-center gap-3 mb-4">
             <span className="stamp stamp-seal text-xs">NEW</span>
             <div>
-              <h3 className="font-serif-detective text-lg font-bold text-[#e8dcc4]">从知乎热榜生成新案件</h3>
-              <p className="text-xs text-[#8a94a8]">选择一个当下热议的话题，AI剧本作家将基于它创作一份全新的探案卷宗</p>
+              <h3 className="font-serif-detective text-lg font-bold text-[#e8dcc4]">AI 剧本作家 · 生成新案件</h3>
+              <p className="text-xs text-[#8a94a8]">选一个素材源，AI 将基于它创作一份全新的探案卷宗</p>
             </div>
           </div>
 
+          {/* 素材源 Tab */}
+          <div className="flex gap-2 mb-4">
+            <button
+              onClick={() => switchGenTab('hot')}
+              className={`px-4 py-1.5 text-xs rounded border transition ${
+                genTab === 'hot'
+                  ? 'border-[#d4a24c] text-[#d4a24c] bg-[#d4a24c]/10'
+                  : 'border-[#2a3245] text-[#8a94a8] hover:border-[#8a6d35]'
+              }`}
+            >
+              📈 知乎热榜
+            </button>
+            <button
+              onClick={() => switchGenTab('story')}
+              className={`px-4 py-1.5 text-xs rounded border transition ${
+                genTab === 'story'
+                  ? 'border-[#d4a24c] text-[#d4a24c] bg-[#d4a24c]/10'
+                  : 'border-[#2a3245] text-[#8a94a8] hover:border-[#8a6d35]'
+              }`}
+            >
+              📖 盐言故事
+            </button>
+          </div>
+
+          {genTab === 'hot' && (<>
           {hotFallback && hotTopics.length > 0 && (
             <p className="text-xs text-[#d4a24c] bg-[#d4a24c]/10 border border-[#8a6d35]/40 rounded px-3 py-2 mb-4">
               知乎热榜暂时限流，已切换为备用话题池（同样可生成完整案件，稍后自动恢复热榜）
@@ -203,18 +262,60 @@ export default function ArchivePage() {
                   </button>
                 ))}
               </div>
-              <div className="flex items-center gap-3">
-                <button
-                  onClick={handleGenerate}
-                  disabled={genIndex === null || loading}
-                  className="btn-primary px-6 py-2.5 text-sm"
-                >
-                  {loading ? 'AI创作中，约需30秒...' : `生成案件${genIndex !== null ? ` · 基于「${hotTopics[genIndex]?.title.substring(0, 15)}...」` : ''}`}
-                </button>
-                {loading && <span className="text-xs text-[#d4a24c] anim-pulse-gold rounded-full px-3 py-1">创作进行中</span>}
+            </>
+          )}
+          </>)}
+
+          {genTab === 'story' && (<>
+          {stories.length === 0 ? (
+            <div className="text-center py-8 text-sm text-[#5a6478]">
+              故事列表加载中或暂不可用，稍后再试。
+            </div>
+          ) : (
+            <>
+              <p className="text-xs text-[#5a6478] mb-3">
+                选一部盐言故事，AI 将保留其人物与氛围，重构为「悬案→搜证→证词→真相」的探案剧本
+              </p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mb-4 max-h-72 overflow-y-auto scrollbar-thin">
+                {stories.map((s) => (
+                  <button
+                    key={s.work_id}
+                    onClick={() => setStoryId(s.work_id)}
+                    disabled={loading || storyLoading}
+                    className={`text-left p-3 rounded border transition ${
+                      storyId === s.work_id
+                        ? 'border-[#d4a24c] bg-[#d4a24c]/10'
+                        : 'border-[#2a3245] hover:border-[#8a6d35] bg-[#0a0c10]/50'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2 mb-1 flex-wrap">
+                      <p className="text-sm text-[#e2e8f0] font-medium line-clamp-1">{s.title}</p>
+                      {s.labels.slice(0, 3).map((l, li) => (
+                        <span key={li} className="text-[10px] px-1.5 py-0.5 rounded bg-[#3d5a7a]/30 text-[#6b9bd1]">{l}</span>
+                      ))}
+                    </div>
+                    <p className="text-xs text-[#5a6478] line-clamp-2">{s.description || '（无摘要）'}</p>
+                  </button>
+                ))}
               </div>
             </>
           )}
+          </>)}
+
+          <div className="flex items-center gap-3 mt-4">
+            <button
+              onClick={handleGenerate}
+              disabled={loading || storyLoading || (genTab === 'hot' ? genIndex === null : !storyId)}
+              className="btn-primary px-6 py-2.5 text-sm"
+            >
+              {loading || storyLoading
+                ? 'AI创作中，约需30秒...'
+                : genTab === 'hot'
+                  ? `生成案件${genIndex !== null ? ` · 基于「${hotTopics[genIndex]?.title.substring(0, 15)}...」` : ''}`
+                  : `改编故事${storyId ? ` · 基于「${stories.find(s => s.work_id === storyId)?.title.substring(0, 15)}...」` : ''}`}
+            </button>
+            {(loading || storyLoading) && <span className="text-xs text-[#d4a24c] anim-pulse-gold rounded-full px-3 py-1">创作进行中</span>}
+          </div>
         </div>
       )}
 

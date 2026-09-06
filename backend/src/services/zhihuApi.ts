@@ -92,5 +92,81 @@ export async function getUserFollowing() {
   return request(`/openapi/user/following`);
 }
 
-export const zhihuApi = { searchContent, globalSearch, getHotList, getStories, getFollowingFeed, getUserFollowing };
+/* ---------------- 黑客松专用内容接口（官方 skill 0.5.3，无需鉴权） ---------------- */
+
+const HACKATHON_CONTENT_BASE = 'https://api.zhihu.com/km-indep-home/hackathon/v2';
+const HACKATHON_CONTENT_TTL = 1800;
+
+async function hackathonFetch(path: string): Promise<any> {
+  const resp = await fetch(`${HACKATHON_CONTENT_BASE}${path}`, {
+    headers: { Accept: 'application/json' },
+  } as any);
+  if (!resp.ok) {
+    throw new Error(`黑客松内容接口错误 ${resp.status}: ${path}`);
+  }
+  return resp.json();
+}
+
+/** 盐言故事列表（比赛专用接口，无需鉴权） */
+export async function getHackathonStories() {
+  const cacheKey = 'hackathon:story:list';
+  const cached = cache.get(cacheKey);
+  if (cached !== undefined) return cached;
+  const data = await hackathonFetch('/story/list');
+  cache.set(cacheKey, data, HACKATHON_CONTENT_TTL);
+  return data;
+}
+
+/** 盐言故事详情（含正文） */
+export async function getHackathonStoryDetail(workId: string) {
+  // 官方要求：拒绝包含路径/查询/换行等危险字符的 work_id
+  if (!workId || /[/\\?#\\r\\n]/.test(workId)) throw new Error('非法 work_id');
+  const cacheKey = `hackathon:story:${workId}`;
+  const cached = cache.get(cacheKey);
+  if (cached !== undefined) return cached;
+  const data = await hackathonFetch(`/story/${encodeURIComponent(workId)}`);
+  cache.set(cacheKey, data, HACKATHON_CONTENT_TTL);
+  return data;
+}
+
+/** 知识内容列表（比赛专用接口，无需鉴权） */
+export async function getHackathonKnowledge() {
+  const cacheKey = 'hackathon:knowledge:list';
+  const cached = cache.get(cacheKey);
+  if (cached !== undefined) return cached;
+  const data = await hackathonFetch('/knowledge/list');
+  cache.set(cacheKey, data, HACKATHON_CONTENT_TTL);
+  return data;
+}
+
+/** 知识内容详情（含正文） */
+export async function getHackathonKnowledgeDetail(workId: string) {
+  if (!workId || /[/\\?#\\r\\n]/.test(workId)) throw new Error('非法 work_id');
+  const cacheKey = `hackathon:knowledge:${workId}`;
+  const cached = cache.get(cacheKey);
+  if (cached !== undefined) return cached;
+  const data = await hackathonFetch(`/knowledge/${encodeURIComponent(workId)}`);
+  cache.set(cacheKey, data, HACKATHON_CONTENT_TTL);
+  return data;
+}
+
+/** 查询开放 API 当日剩余额度（不消耗业务额度） */
+export async function getQuota() {
+  const path = `/api/v1/quota`;
+  return request(path, 120);
+}
+
+export const zhihuApi = {
+  searchContent,
+  globalSearch,
+  getHotList,
+  getStories,
+  getFollowingFeed,
+  getUserFollowing,
+  getHackathonStories,
+  getHackathonStoryDetail,
+  getHackathonKnowledge,
+  getHackathonKnowledgeDetail,
+  getQuota,
+};
 export default zhihuApi;
