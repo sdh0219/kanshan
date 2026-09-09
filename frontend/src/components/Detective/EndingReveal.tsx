@@ -22,7 +22,7 @@ export default function EndingReveal({ endingType, endingText, truth, clues, com
   const cfg = endingType ? endingConfig[endingType] || endingConfig.neutral : endingConfig.neutral;
 
   return (
-    <section className="case-card p-10 texture-paper text-center anim-fade-up">
+    <section className="case-card p-6 md:p-10 texture-paper text-center anim-fade-up">
       <div className="flex items-center justify-between mb-6">
         <p className="text-[10px] text-[#5a6478] tracking-[4px]">CASE CLOSED</p>
         <span className={`stamp ${cfg.stampClass} text-sm`}>{cfg.title}</span>

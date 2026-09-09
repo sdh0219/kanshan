@@ -154,6 +154,24 @@ export default function HomePage() {
         {error && <p className="mt-4 text-sm text-[#c05252]">{error}</p>}
       </section>
 
+      {/* 30秒看懂：演示视频 */}
+      <section className="case-card p-6 md:p-8 anim-fade-up">
+        <div className="flex items-center gap-3 mb-5">
+          <span className="stamp stamp-seal text-xs">演示</span>
+          <div>
+            <h3 className="font-serif-detective text-lg font-bold text-[#e8dcc4]">30 秒看懂看山探案录</h3>
+            <p className="text-xs text-[#5a6478]">带解说的完整探案实录：建档 → 搜证 → 审讯 → 结案</p>
+          </div>
+        </div>
+        <video
+          controls
+          preload="none"
+          poster="/demo-poster.jpg"
+          src="/demo-video.mp4"
+          className="w-full rounded border border-[#2a3245] bg-black"
+        />
+      </section>
+
       {/* 流程说明 */}
       <section className="grid grid-cols-1 md:grid-cols-4 gap-4">
         {[

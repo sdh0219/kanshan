@@ -5,6 +5,7 @@ import SearchPanel from '../components/Detective/SearchPanel';
 import DialogueBox from '../components/Detective/DialogueBox';
 import ClueWall from '../components/Detective/ClueWall';
 import CaseIntro from '../components/Detective/CaseIntro';
+import { playSfx } from '../utils/sfx';
 
 export default function GamePage() {
   const {
@@ -36,7 +37,10 @@ export default function GamePage() {
     api.companion.action({
       companion, fingerprint, gamePhase: phase, playerInput, context,
     })
-      .then((resp) => addDialogue({ role: 'companion', content: resp.reply }))
+      .then((resp) => {
+        addDialogue({ role: 'companion', content: resp.reply });
+        playSfx('blip');
+      })
       .catch(() => {
         // 搭档暂时沉默，不打断游戏
       })
@@ -57,6 +61,7 @@ export default function GamePage() {
           && companionDims.includes(result.clue.requiresDim);
         const finalClue = { ...result.clue, foundBy: isCompanionFind ? 'companion' as const : result.clue.foundBy };
         addClue(finalClue);
+        playSfx('ding');
         addDialogue({
           role: 'kanshan',
           content: isCompanionFind
@@ -148,11 +153,11 @@ export default function GamePage() {
     <div className="space-y-5">
       {/* 案件条 */}
       {caseData && (
-        <div className="case-card p-4 flex items-center justify-between">
-          <div className="flex items-center gap-4">
+        <div className="case-card p-4 flex flex-wrap items-center justify-between gap-y-2">
+          <div className="flex items-center gap-4 min-w-0">
             <span className="stamp stamp-seal text-[10px] whitespace-nowrap">调查中</span>
-            <div>
-              <h2 className="font-serif-detective text-lg font-bold text-[#e8dcc4]">{caseData.case_title}</h2>
+            <div className="min-w-0">
+              <h2 className="font-serif-detective text-lg font-bold text-[#e8dcc4] truncate">{caseData.case_title}</h2>
               <p className="text-xs text-[#5a6478] line-clamp-1 max-w-xl">{caseData.case_intro}</p>
             </div>
           </div>

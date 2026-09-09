@@ -3,6 +3,7 @@ import { useGameStore } from '../stores/gameStore';
 import { api } from '../api/client';
 import EndingReveal from '../components/Detective/EndingReveal';
 import DetectiveBoard from '../components/Social/DetectiveBoard';
+import { playSfx } from '../utils/sfx';
 
 export default function ResultPage() {
   const {
@@ -18,6 +19,7 @@ export default function ResultPage() {
   const saveAttempted = useRef(false);
 
   useEffect(() => {
+    if (endingType) playSfx('stamp');
     if (saveAttempted.current) return;
     saveAttempted.current = true;
 

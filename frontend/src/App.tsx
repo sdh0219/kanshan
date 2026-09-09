@@ -1,5 +1,7 @@
+import { useState } from 'react';
 import { useGameStore } from './stores/gameStore';
 import { KanshanPortrait } from './components/LiuKanshan';
+import { isMuted, toggleMuted } from './utils/sfx';
 import HomePage from './pages/HomePage';
 import FingerprintPage from './pages/FingerprintPage';
 import ArchivePage from './pages/ArchivePage';
@@ -8,15 +10,16 @@ import ResultPage from './pages/ResultPage';
 import MyRecordsPage from './pages/MyRecordsPage';
 
 const NAV_ITEMS = [
-  { key: 'home', label: '侦探事务所', desc: 'HOME' },
-  { key: 'archive', label: '案件档案室', desc: 'ARCHIVE' },
-  { key: 'records', label: '我的卷宗', desc: 'RECORDS' },
+  { key: 'home', label: '侦探事务所', short: '事务所', desc: 'HOME' },
+  { key: 'archive', label: '案件档案室', short: '档案室', desc: 'ARCHIVE' },
+  { key: 'records', label: '我的卷宗', short: '卷宗', desc: 'RECORDS' },
 ] as const;
 
 export default function App() {
   const page = useGameStore((s) => s.page);
   const setPage = useGameStore((s) => s.setPage);
   const userId = useGameStore((s) => s.userId);
+  const [muted, setMuted] = useState(isMuted());
 
   const activeNav =
     page === 'game' ? 'archive'
@@ -27,32 +30,40 @@ export default function App() {
   return (
     <div className="min-h-screen flex flex-col">
       <header className="sticky top-0 z-50 bg-[#0a0c10]/95 backdrop-blur border-b border-[#2a3245]">
-        <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
+        <div className="max-w-6xl mx-auto px-4 md:px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3 cursor-pointer group" onClick={() => setPage('home')}>
             <KanshanPortrait pose={1} size={40} className="group-hover:scale-105 transition-transform" />
             <div>
               <h1 className="font-serif-detective text-lg font-bold text-[#e8dcc4] tracking-wider leading-tight">
                 看山探案录
               </h1>
-              <p className="text-[10px] text-[#5a6478] tracking-[3px]">KANSHAN DETECTIVE ARCHIVES</p>
+              <p className="text-[10px] text-[#5a6478] tracking-[3px] hidden md:block">KANSHAN DETECTIVE ARCHIVES</p>
             </div>
           </div>
 
-          <nav className="flex items-center gap-8">
+          <nav className="flex items-center gap-3 md:gap-8">
             {NAV_ITEMS.map(item => (
               <button
                 key={item.key}
                 onClick={() => setPage(item.key)}
                 className={`nav-link font-serif-detective text-sm pb-1 ${activeNav === item.key ? 'active' : ''}`}
               >
-                {item.label}
+                <span className="md:hidden">{item.short}</span>
+                <span className="hidden md:inline">{item.label}</span>
               </button>
             ))}
             {userId && (
-              <span className="tag tag-gold border-[#8a6d35] text-[#d4a24c]">
+              <span className="tag tag-gold border-[#8a6d35] text-[#d4a24c] hidden sm:inline-flex">
                 {userId}
               </span>
             )}
+            <button
+              onClick={() => setMuted(toggleMuted())}
+              title={muted ? '开启氛围音效' : '关闭氛围音效'}
+              className="text-base opacity-70 hover:opacity-100 transition-opacity"
+            >
+              {muted ? '🔇' : '🔊'}
+            </button>
           </nav>
         </div>
       </header>
