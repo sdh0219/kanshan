@@ -22,22 +22,25 @@ export default function GamePage() {
   const [npcQuestion, setNpcQuestion] = useState('');
   const [showReasoningModal, setShowReasoningModal] = useState(false);
   const [reasoningText, setReasoningText] = useState('');
+  const [companionThinking, setCompanionThinking] = useState(false);
 
   const isTeamMode = gameMode === 'team';
   const caseId = caseData?.case_id || 'preset';
   const companionDims: string[] = companion?.complement_dims || [];
   const exclusiveRevealed = dialogues.filter((d: any) => d.isExclusive).length;
 
-  const companionComment = async (phase: 'search' | 'dialogue' | 'reasoning', playerInput: string, context?: any) => {
+  // 搭档插话不阻塞主流程：玩家无需等搭档发言即可继续操作，回复就绪后自动追加到对话框
+  const companionComment = (phase: 'search' | 'dialogue' | 'reasoning', playerInput: string, context?: any) => {
     if (!isTeamMode || !fingerprint || !companion) return;
-    try {
-      const resp = await api.companion.action({
-        companion, fingerprint, gamePhase: phase, playerInput, context,
-      });
-      addDialogue({ role: 'companion', content: resp.reply });
-    } catch {
-      // 搭档暂时沉默，不打断游戏
-    }
+    setCompanionThinking(true);
+    api.companion.action({
+      companion, fingerprint, gamePhase: phase, playerInput, context,
+    })
+      .then((resp) => addDialogue({ role: 'companion', content: resp.reply }))
+      .catch(() => {
+        // 搭档暂时沉默，不打断游戏
+      })
+      .finally(() => setCompanionThinking(false));
   };
 
   const handleSearch = async () => {
@@ -61,7 +64,7 @@ export default function GamePage() {
             : `发现新线索：${result.clue.content}`,
         });
       }
-      await companionComment(
+      companionComment(
         'search',
         `我搜索了"${searchKeyword}"${result.clue ? '，似乎有所发现' : ''}`,
         {
@@ -102,7 +105,7 @@ export default function GamePage() {
             requiresDim: nextExclusive.requires_dim,
           });
         } else {
-          await companionComment('dialogue', npcQuestion, { npcReply: result.reply });
+          companionComment('dialogue', npcQuestion, { npcReply: result.reply });
         }
       }
       setNpcQuestion('');
@@ -134,7 +137,7 @@ export default function GamePage() {
   const elapsedMin = startTime ? Math.round((Date.now() - startTime) / 60000) : 0;
 
   const introText = isTeamMode
-    ? companionIntro
+    ? (companionIntro || `我是${companion?.name || '你的搭档'}。开场白正在赶来，进了案发现场我们边查边聊。`)
     : '看山：这次你选择独自调查。没有搭档补充视角，你需要更加仔细地审视每一条线索和每一个证人的话。谨慎搜索，深入提问。';
 
   if (showIntro && caseData) {
@@ -182,6 +185,7 @@ export default function GamePage() {
             setQuestion={setNpcQuestion}
             onTalk={handleTalkToNpc}
             loading={loading}
+            companionThinking={companionThinking}
           />
         </div>
 

@@ -1,6 +1,7 @@
 import { useGameStore } from '../stores/gameStore';
 import RadarChart from '../components/Fingerprint/RadarChart';
 import CompanionCard from '../components/Companion/CompanionCard';
+import ThinkingDots from '../components/Detective/ThinkingDots';
 
 export default function FingerprintPage() {
   const { fingerprint, companion, companionIntro, setPage, userId } = useGameStore();
@@ -100,12 +101,21 @@ export default function FingerprintPage() {
       </section>
 
       {/* 搭档卡 */}
-      {companion && (
+      {companion ? (
         <CompanionCard
           companion={companion}
           intro={companionIntro}
           fingerprintSummary={fingerprint?.summary}
         />
+      ) : (
+        <section className="case-card p-8 border-[#8a6d35]/30 text-center">
+          <p className="text-sm text-[#8a94a8]">
+            <ThinkingDots text="正在为你匹配互补型AI搭档" />
+          </p>
+          <p className="text-xs text-[#5a6478] mt-2">
+            搭档就绪后会自动出现在这里——不着急，档案室可以先逛着
+          </p>
+        </section>
       )}
 
       {/* 入口 */}

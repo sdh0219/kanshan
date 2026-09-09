@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { KanshanPortrait } from '../LiuKanshan';
+import ThinkingDots from './ThinkingDots';
 
 interface DialogueEntry {
   role: 'player' | 'npc' | 'companion' | 'kanshan';
@@ -15,6 +16,7 @@ interface DialogueBoxProps {
   setQuestion: (v: string) => void;
   onTalk: (npcId: string) => void;
   loading: boolean;
+  companionThinking?: boolean;
 }
 
 const roleConfig: Record<string, { name: string; color: string; borderColor: string }> = {
@@ -24,7 +26,7 @@ const roleConfig: Record<string, { name: string; color: string; borderColor: str
   kanshan: { name: '看山', color: 'text-[#6dbb8a]', borderColor: '#6dbb8a' },
 };
 
-export default function DialogueBox({ dialogues, npcList, currentNpcId, question, setQuestion, onTalk, loading }: DialogueBoxProps) {
+export default function DialogueBox({ dialogues, npcList, currentNpcId, question, setQuestion, onTalk, loading, companionThinking }: DialogueBoxProps) {
   const endRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -93,7 +95,14 @@ export default function DialogueBox({ dialogues, npcList, currentNpcId, question
           );
         })}
         {loading && (
-          <p className="text-xs text-[#8a6d35] anim-fade-in">对方正在回应...</p>
+          <p className="text-xs text-[#8a6d35] anim-fade-in">
+            <ThinkingDots text="对方正在回应" />
+          </p>
+        )}
+        {!loading && companionThinking && (
+          <p className="text-xs text-[#d4a24c] anim-fade-in">
+            <ThinkingDots text="搭档正在思考" />
+          </p>
         )}
         <div ref={endRef} />
       </div>

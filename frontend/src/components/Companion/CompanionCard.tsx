@@ -1,3 +1,5 @@
+import ThinkingDots from '../Detective/ThinkingDots';
+
 interface CompanionCardProps {
   companion: {
     name: string;
@@ -28,7 +30,13 @@ export default function CompanionCard({ companion, intro }: CompanionCardProps) 
       </div>
 
       <div className="bg-[#0a0c10]/70 rounded border-l-3 border-[#8a6d35] p-5 mb-5" style={{ borderLeftWidth: 3 }}>
-        <p className="text-[15px] text-[#c9d2e0] leading-8 italic">"{intro}"</p>
+        {intro ? (
+          <p className="text-[15px] text-[#c9d2e0] leading-8 italic anim-fade-in">"{intro}"</p>
+        ) : (
+          <p className="text-sm text-[#8a6d35]">
+            <ThinkingDots text={`${companion.name}正在自我介绍`} />
+          </p>
+        )}
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">

@@ -27,13 +27,18 @@ export default function HomePage() {
       setUserId(id);
       setFingerprint(fingerprint);
 
-      const { companion } = await api.companion.generate(fingerprint);
-      setCompanion(companion);
-
-      const { intro } = await api.companion.intro(fingerprint, companion);
-      setCompanionIntro(intro);
-
+      // 指纹一出立即翻页展示雷达图；搭档与开场白在指纹页后台补齐，不让用户干等
       setPage('fingerprint');
+
+      api.companion.generate(fingerprint)
+        .then(({ companion }) => {
+          setCompanion(companion);
+          return api.companion.intro(fingerprint, companion);
+        })
+        .then(({ intro }) => setCompanionIntro(intro))
+        .catch(() => {
+          // 搭档生成失败不影响档案展示与独立探索；组队入口有兜底文案
+        });
     } catch (err: any) {
       setError(err.message || '分析失败，请重试');
     } finally {

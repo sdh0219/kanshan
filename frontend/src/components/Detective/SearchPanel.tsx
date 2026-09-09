@@ -1,4 +1,5 @@
 import { KanshanGif } from '../LiuKanshan';
+import ThinkingDots from './ThinkingDots';
 
 interface SearchPanelProps {
   keyword: string;
@@ -39,6 +40,12 @@ export default function SearchPanel({ keyword, setKeyword, onSearch, results, lo
           {loading ? '检索中' : '搜证'}
         </button>
       </div>
+
+      {loading && (
+        <p className="mb-4 text-xs text-[#8a6d35] anim-fade-in">
+          <ThinkingDots text="看山正在翻阅知乎的公开内容" />
+        </p>
+      )}
 
       {hints && hints.length > 0 && (
         <div className="mb-4">
