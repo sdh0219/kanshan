@@ -1241,7 +1241,7 @@ flowchart LR
           <tr><th>页面</th><th>功能</th><th>核心交互</th></tr>
         </thead>
         <tbody>
-          <tr><td>首页 HomePage</td><td>输入知乎 ID 建档</td><td>输入框 + 预设用户快捷选择 + 模式选择卡片</td></tr>
+          <tr><td>首页 HomePage</td><td>输入知乎 ID 建档</td><td>输入框 + 预设用户快捷选择 + 「30 秒看懂」演示视频 + 模式选择卡片</td></tr>
           <tr><td>指纹页 FingerprintPage</td><td>思维指纹展示</td><td>五维雷达图 + 侦探能力档案 + 搭档介绍</td></tr>
           <tr><td>档案室 ArchivePage</td><td>案件列表与选择</td><td>案件卡片 + 热榜生成面板 + 用户投稿面板 + 模式选择</td></tr>
           <tr><td>游戏页 GamePage</td><td>探案主界面</td><td>案件介绍 → 搜证面板 → NPC 对话 → 线索墙 → 推理 → 结局</td></tr>
@@ -1256,6 +1256,15 @@ flowchart LR
       <li><strong>KanshanBubble</strong>：刘看山头像 + 对话气泡，用于案件引导、搜证提示、结局点评</li>
       <li><strong>KanshanGif</strong>：6 种动态表情（idle / hello / computer / swing / sleep / basketball），根据游戏阶段切换</li>
       <li><strong>KanshanPortrait</strong>：三视图作为头像，用于侦探榜排名展示</li>
+    </ul>
+
+    <h3>7.4 体验打磨：等待感知与反馈设计</h3>
+    <p>AI 生成类交互天然伴随数秒到十几秒的等待，产品用四类手段把「干等」变成「有反馈的期待」：</p>
+    <ul>
+      <li><strong>异步不阻塞</strong>：组队模式中搭档插话在后台生成、就绪后自动追加到对话流，玩家无需等待即可继续搜证与审讯；建档页在思维指纹生成的瞬间即展示雷达图，搭档开场白随后异步补齐</li>
+      <li><strong>拟人等待动效</strong>：所有 AI 等待期使用动态省略号与拟人文案（如「看山正在翻阅知乎的公开内容」「对方正在回应」「搭档正在思考」），明确告知系统状态，避免「像卡死」的焦虑</li>
+      <li><strong>氛围音效</strong>：线索命中（清音）、结局印章（钝响）、搭档插话（轻提示）三处关键反馈配以低音量音效，导航栏提供一键静音开关（偏好持久化）</li>
+      <li><strong>全端适配</strong>：首页内嵌「30 秒看懂」带解说演示视频，降低新人理解成本；移动端（390px 视口）全流程无横向溢出</li>
     </ul>
   </section>
 
