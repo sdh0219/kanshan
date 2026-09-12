@@ -104,47 +104,52 @@ export default function HomePage() {
 
         <div className="mb-6">
           <KanshanBubble pose={2} size={56}>
-            你好，我是看山。每起案件都不简单——在开始之前，我想先了解你的思维方式。
-            告诉我你的知乎ID，我为你绘制侦探能力档案。
+            你好，我是看山。破案只需要三步——
+            ① 点下方金色按钮，一键建立侦探档案；② 挑一份卷宗，组队开查；③ 搜证、审讯证人、写下你的推理。
           </KanshanBubble>
         </div>
 
-        <div className="flex gap-3 mb-2">
-          <input
-            type="text"
-            value={inputId}
-            onChange={(e) => setInputId(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && handleAnalyze()}
-            placeholder="输入你的知乎主页ID或用户名..."
-            className="input-detective flex-1 px-4 py-3 text-sm"
-          />
-          <button
-            onClick={() => handleAnalyze()}
-            disabled={loading || !inputId.trim()}
-            className="btn-primary px-8 text-sm whitespace-nowrap"
-          >
-            {loading ? '分析中...' : '开始建档'}
-          </button>
-        </div>
-
+        {/* 快速体验通道：评委与新玩家的首选路径，免输入一键建档 */}
         {seedUsers.length > 0 && (
-          <div className="mt-5 pt-5 border-t border-[#232a3b]">
-            <p className="text-xs text-[#5a6478] mb-3">或选择预设侦探快速体验：</p>
-            <div className="flex flex-wrap gap-2">
-              {seedUsers.map((u) => (
+          <div className="mb-6 rounded border border-[#8a6d35] bg-[#d4a24c]/[0.06] p-4">
+            <p className="text-xs text-[#d4a24c] tracking-widest mb-3">⭐ 3 分钟快速体验 · 免输入知乎 ID，点这里直接开始</p>
+            <div className="flex flex-wrap gap-3">
+              {seedUsers.map((u, i) => (
                 <button
                   key={u.userId}
                   onClick={() => handleAnalyze(u.userId)}
                   disabled={loading}
-                  className="btn-ghost px-4 py-2 text-xs"
+                  className={i === 0 ? 'btn-primary px-7 py-3 text-sm anim-pulse-gold' : 'btn-primary px-5 py-2.5 text-xs opacity-90'}
                 >
-                  {u.displayName}
-                  <span className="text-[#5a6478] ml-2">{u.keywords?.join(' · ')}</span>
+                  以「{u.displayName}」身份建档
+                  <span className="ml-2 text-[10px] opacity-75">{u.keywords?.slice(0, 2).join(' · ')}</span>
                 </button>
               ))}
             </div>
           </div>
         )}
+
+        {/* 专属档案：完整体验路径 */}
+        <div className="pt-5 border-t border-[#232a3b]">
+          <p className="text-xs text-[#5a6478] mb-3">或输入知乎 ID，建立完全属于你的侦探档案（AI 将分析你的真实回答）：</p>
+          <div className="flex gap-3">
+            <input
+              type="text"
+              value={inputId}
+              onChange={(e) => setInputId(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleAnalyze()}
+              placeholder="输入你的知乎主页ID或用户名..."
+              className="input-detective flex-1 px-4 py-3 text-sm"
+            />
+            <button
+              onClick={() => handleAnalyze()}
+              disabled={loading || !inputId.trim()}
+              className="btn-ghost px-8 text-sm whitespace-nowrap"
+            >
+              {loading ? '分析中...' : '开始建档'}
+            </button>
+          </div>
+        </div>
 
         {loading && (
           <p className="mt-4 text-xs text-[#d4a24c] anim-pulse-gold inline-block rounded-full px-3 py-1">
