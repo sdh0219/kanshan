@@ -348,10 +348,11 @@ app.get('/api/auth/login', async (c) => {
 
 app.get('/api/auth/callback', async (c) => {
   if (!oauthService.isOAuthConfigured()) return c.redirect('/?login=error');
-  // 黑客松实测回调参数为 authorization_code（兼容 code）
+  // 黑客松实测回调参数为 authorization_code（兼容 code）；官方文档警告回调可能不返回 state，故 state 缺省时放行、存在时才校验
   const code = c.req.query('authorization_code') || c.req.query('code') || '';
   const state = c.req.query('state') || '';
-  if (!code || !(await oauthService.consumeState(state))) return c.redirect('/?login=error');
+  if (!code) return c.redirect('/?login=error');
+  if (state && !(await oauthService.consumeState(state))) return c.redirect('/?login=error');
   try {
     const session = await oauthService.exchangeAndCreateSession(code);
     c.header('Set-Cookie', oauthService.buildSessionCookie(session.sid));

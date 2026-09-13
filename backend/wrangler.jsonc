@@ -20,7 +20,7 @@
     "AGENT_API_BASE": "https://developer.zhihu.com",
     "AGENT_MODEL": "zhida-fast-1p5",
     "NODE_ENV": "production",
-    "ZHIHU_OAUTH_APP_ID": "",
+    "ZHIHU_OAUTH_APP_ID": "519",
     "OAUTH_REDIRECT_URI": "https://kanshan-detective.3082780889.workers.dev/api/auth/callback"
   },
   "dev": {
