@@ -1,0 +1,21 @@
+{
+  "$schema": "../node_modules/wrangler/config-schema.json",
+  "name": "kanshan-detective",
+  "pages_build_output_dir": "../dist-pages",
+  "compatibility_date": "2025-09-01",
+  "compatibility_flags": ["nodejs_compat"],
+  "kv_namespaces": [
+    {
+      "binding": "DATA",
+      "id": "5400b9127ae14c179f646af6a6376d7a"
+    }
+  ],
+  "vars": {
+    "ZHIHU_API_BASE": "https://developer.zhihu.com",
+    "AGENT_API_BASE": "https://developer.zhihu.com",
+    "AGENT_MODEL": "zhida-fast-1p5",
+    "NODE_ENV": "production",
+    "ZHIHU_OAUTH_APP_ID": "",
+    "OAUTH_REDIRECT_URI": "https://kanshan-detective.pages.dev/api/auth/callback"
+  }
+}

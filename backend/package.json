@@ -12,7 +12,8 @@
     "kv:create": "wrangler kv namespace create DATA",
     "predeploy": "npm run typecheck && npm run build:client",
     "deploy": "wrangler deploy",
-    "deploy:only": "wrangler deploy"
+    "deploy:only": "wrangler deploy",
+    "deploy:pages": "node scripts/deploy-pages.mjs"
   },
   "dependencies": {
     "@hono/node-server": "^2.1.1",

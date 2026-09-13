@@ -5020,8 +5020,8 @@ app.get("*", async (c) => {
 var worker_default = app;
 
 // src/server-node.ts
-var PORT = Number(process.env.PORT || 3e3);
-var DIST = import_node_path.default.resolve(process.env.STATIC_DIR || import_node_path.default.join(process.cwd(), "static"));
+var PORT = Number(process.env.PORT || 9e3);
+var DIST = import_node_path.default.resolve(process.cwd(), "static");
 function createMemoryKV() {
   const store2 = /* @__PURE__ */ new Map();
   return {
@@ -5106,14 +5106,16 @@ var env2 = {
   ZHIHU_API_BASE: "https://developer.zhihu.com",
   AGENT_API_BASE: "https://developer.zhihu.com",
   AGENT_MODEL: "zhida-fast-1p5",
-  ...process.env,
+  ZHIHU_ACCESS_SECRET: "cb25b6f08de3723c36014ca72d3eea65957025af",
+  ZHIHU_OAUTH_APP_ID: "",
+  ZHIHU_OAUTH_APP_KEY: "",
+  OAUTH_REDIRECT_URI: "https://kanshan-detective.3082780889.workers.dev/api/auth/callback",
   NODE_ENV: "production"
-  // 平台环境变量不可覆盖
 };
 serve(
   { fetch: (req) => worker_default.fetch(req, env2), port: PORT },
   (info) => {
-    const oauthOn = !!process.env.ZHIHU_OAUTH_APP_ID && !!process.env.ZHIHU_OAUTH_APP_KEY;
+    const oauthOn = false;
     console.log(`[\u770B\u5C71\u63A2\u6848\u5F55] Node/AiWorks \u670D\u52A1\u5DF2\u542F\u52A8: http://localhost:${info.port}`);
     console.log(`[\u770B\u5C71\u63A2\u6848\u5F55] \u9759\u6001\u76EE\u5F55: ${DIST}`);
     console.log(`[\u770B\u5C71\u63A2\u6848\u5F55] OAuth \u767B\u5F55: ${oauthOn ? "\u5DF2\u542F\u7528" : "\u672A\u914D\u7F6E\u51ED\u8BC1\uFF08\u767B\u5F55\u5165\u53E3\u9690\u85CF\uFF09"}`);

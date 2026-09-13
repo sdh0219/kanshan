@@ -9,6 +9,19 @@
             └── DATA (KV)   → 生成案件 / 探案记录
 ```
 
+## ⭐ 双线部署现状（2026-09-13）
+
+| 站点 | 地址 | 角色 | 大陆直连 |
+|---|---|---|---|
+| **Cloudflare Pages（主站）** | https://kanshan-detective.pages.dev | 提交表单用的作品链接 | ✅ 实测通过 |
+| Cloudflare Workers（备用站） | https://kanshan-detective.3082780889.workers.dev | 海外/翻墙兜底 | ❌ workers.dev 被墙 |
+
+- 两站**共享同一 KV 命名空间**（id `5400b9...7d7a`），数据实时一致
+- Pages 主站采用高级模式：`_worker.js`（esbuild 打包整个 Hono Worker）+ 静态资源，与 Workers 版完全同构
+- **日常更新**：`npm run deploy:pages`（主站）/ `npm run deploy`（备用站），建议两个都跑保持一致
+- Pages 配置：`backend/pages-deploy/wrangler.jsonc`（Pages 命令只认 cwd 下的 wrangler.jsonc，故独立目录）
+- Pages 密钥：`npx wrangler pages secret put ZHIHU_ACCESS_SECRET --project-name kanshan-detective`
+
 ## 一、前置条件
 
 | 项 | 要求 |

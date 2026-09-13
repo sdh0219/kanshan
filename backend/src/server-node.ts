@@ -1,13 +1,15 @@
-// Node 运行时入口 —— 用于知乎 AI Works 等平台的一键部署（与 Cloudflare Workers 共用同一套业务代码）
-// 差异仅在运行时垫片：KV 以进程内存兜底（平台限制无数据库读写），静态资源从本地 dist 托管
+// Node 运行时入口 —— 用于知乎 AI Works（CloudBase Web 函数）的一键部署
+// 与 Cloudflare Workers 共用同一套业务代码：KV 以进程内存兜底，静态资源从 ./static 托管
+// 规范约束（AI Works/CloudBase 源码构建协议）：运行时仅允许读取 PORT/HOST 白名单环境变量，
+// 其余配置由 esbuild --define 在打包时注入为常量（密钥以明文进部署包，不进代码仓库）
 import fs from 'node:fs';
 import path from 'node:path';
 import { Readable } from 'node:stream';
 import { serve } from '@hono/node-server';
 import app from './worker.js';
 
-const PORT = Number(process.env.PORT || 3000);
-const DIST = path.resolve(process.env.STATIC_DIR || path.join(process.cwd(), 'static'));
+const PORT = Number(process.env.PORT || 9000);
+const DIST = path.resolve(process.cwd(), 'static');
 
 /* ---------- 内存 KV 垫片（与 Workers KV 的 get/put/delete 同形，支持 TTL） ---------- */
 function createMemoryKV() {
@@ -102,8 +104,11 @@ const env: Record<string, unknown> = {
   ZHIHU_API_BASE: 'https://developer.zhihu.com',
   AGENT_API_BASE: 'https://developer.zhihu.com',
   AGENT_MODEL: 'zhida-fast-1p5',
-  ...process.env,
-  NODE_ENV: 'production', // 平台环境变量不可覆盖
+  ZHIHU_ACCESS_SECRET: process.env.ZHIHU_ACCESS_SECRET,
+  ZHIHU_OAUTH_APP_ID: process.env.ZHIHU_OAUTH_APP_ID,
+  ZHIHU_OAUTH_APP_KEY: process.env.ZHIHU_OAUTH_APP_KEY,
+  OAUTH_REDIRECT_URI: process.env.OAUTH_REDIRECT_URI,
+  NODE_ENV: 'production',
 };
 
 serve(

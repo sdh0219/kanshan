@@ -12,3 +12,6 @@ Thumbs.db
 ...render_env_tmp.json
 smoke-test.ps1
 smoke-result.txt
+
+# Pages 部署构建产物
+backend/dist-pages/
