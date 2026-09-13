@@ -5,12 +5,13 @@ interface SearchPanelProps {
   keyword: string;
   setKeyword: (v: string) => void;
   onSearch: () => void;
+  onQuickSearch?: (kw: string) => void;
   results: any[];
   loading: boolean;
   hints?: { keyword: string; hint: string }[];
 }
 
-export default function SearchPanel({ keyword, setKeyword, onSearch, results, loading, hints }: SearchPanelProps) {
+export default function SearchPanel({ keyword, setKeyword, onSearch, onQuickSearch, results, loading, hints }: SearchPanelProps) {
   return (
     <div className="case-card p-5">
       <div className="flex items-center justify-between mb-4">
@@ -40,6 +41,24 @@ export default function SearchPanel({ keyword, setKeyword, onSearch, results, lo
           {loading ? '检索中' : '搜证'}
         </button>
       </div>
+
+      {onQuickSearch && hints && hints.length > 0 && (
+        <div className="mb-4">
+          <p className="text-xs text-[#8a94a8] mb-2">不知道搜什么？点一个方向，直接在知乎里翻线索：</p>
+          <div className="flex flex-wrap gap-2">
+            {hints.map((h, i) => (
+              <button
+                key={i}
+                onClick={() => onQuickSearch(h.keyword)}
+                disabled={loading}
+                className="px-3 py-1.5 text-xs rounded-full border border-[#8a6d35]/50 bg-[#8a6d35]/10 text-[#d4a24c] hover:bg-[#8a6d35]/25 hover:border-[#8a6d35] transition disabled:opacity-40"
+              >
+                🔍 {h.keyword}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       {loading && (
         <p className="mb-4 text-xs text-[#8a6d35] anim-fade-in">

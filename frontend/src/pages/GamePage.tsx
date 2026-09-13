@@ -18,6 +18,12 @@ export default function GamePage() {
   } = useGameStore();
 
   const [showIntro, setShowIntro] = useState(true);
+  const [showTutorial, setShowTutorial] = useState(() => {
+    try { return !localStorage.getItem('kanshan_tutorial_seen'); } catch { return false; }
+  });
+  const [showHowtoBar, setShowHowtoBar] = useState(() => {
+    try { return !localStorage.getItem('kanshan_howto_bar_closed'); } catch { return true; }
+  });
   const [searchKeyword, setSearchKeyword] = useState('');
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [npcQuestion, setNpcQuestion] = useState('');
@@ -47,12 +53,13 @@ export default function GamePage() {
       .finally(() => setCompanionThinking(false));
   };
 
-  const handleSearch = async () => {
-    if (!searchKeyword.trim()) return;
+  const handleSearch = async (kw?: string) => {
+    const q = typeof kw === 'string' ? kw : searchKeyword;
+    if (!q.trim()) return;
     setLoading(true);
     setError(null);
     try {
-      const result = await api.game.search(searchKeyword, { clues }, caseId);
+      const result = await api.game.search(q, { clues }, caseId);
       setSearchResults(result.results || []);
       if (result.clue) {
         // 组队模式：命中搭档互补维度的关键线索记为搭档发现（搭档贡献的数值来源）
@@ -71,7 +78,7 @@ export default function GamePage() {
       }
       companionComment(
         'search',
-        `我搜索了"${searchKeyword}"${result.clue ? '，似乎有所发现' : ''}`,
+        `我搜索了"${q}"${result.clue ? '，似乎有所发现' : ''}`,
         {
           // 只传标题，不给内容：避免搭档把知乎社区内容当成案件事实编造结论
           searchResults: (result.results || []).slice(0, 3)
@@ -149,8 +156,45 @@ export default function GamePage() {
     return <CaseIntro caseData={caseData} companionIntro={introText} onStart={() => setShowIntro(false)} mode={gameMode} />;
   }
 
+  const closeTutorial = () => {
+    setShowTutorial(false);
+    try { localStorage.setItem('kanshan_tutorial_seen', '1'); } catch {}
+  };
+
   return (
     <div className="space-y-5">
+      {/* 首次进入的新手引导（每台设备只出现一次） */}
+      {showTutorial && caseData && (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/75 backdrop-blur-sm" onClick={closeTutorial} />
+          <div className="relative case-card p-7 max-w-md w-full texture-paper anim-fade-up">
+            <div className="flex items-center justify-between mb-4">
+              <p className="text-[10px] text-[#5a6478] tracking-[4px]">HOW TO PLAY</p>
+              <span className="stamp stamp-gold text-xs">侦探手册</span>
+            </div>
+            <h3 className="font-serif-detective text-2xl font-bold text-[#e8dcc4] mb-1">三步破一案</h3>
+            <p className="text-xs text-[#8a94a8] mb-5">本案：《{caseData.case_title}》</p>
+            <ol className="space-y-3.5 text-sm text-[#c9d2e0]">
+              <li className="flex gap-3">
+                <span className="shrink-0 w-7 h-7 rounded-full border border-[#8a6d35] text-[#d4a24c] flex items-center justify-center text-xs font-bold">1</span>
+                <span><b className="text-[#d4a24c]">搜证</b>：点搜证框下方的方向词（如「论文撤稿」），看山会去翻<b>真实知乎内容</b>，命中关键线索会亮起 ★</span>
+              </li>
+              <li className="flex gap-3">
+                <span className="shrink-0 w-7 h-7 rounded-full border border-[#8a6d35] text-[#d4a24c] flex items-center justify-center text-xs font-bold">2</span>
+                <span><b className="text-[#d4a24c]">审讯</b>：点一位嫌疑人，像聊天一样随便问——追问动机、要说法、抛证据都行，TA会临场回应</span>
+              </li>
+              <li className="flex gap-3">
+                <span className="shrink-0 w-7 h-7 rounded-full border border-[#8a6d35] text-[#d4a24c] flex items-center justify-center text-xs font-bold">3</span>
+                <span><b className="text-[#d4a24c]">指认</b>：线索攒得差不多，点右侧「推理指认」，写下"真凶是谁+为什么"，看山评分定结局</span>
+              </li>
+            </ol>
+            <button onClick={closeTutorial} className="btn-primary w-full py-2.5 mt-6 text-sm font-serif-detective tracking-widest">
+              明白了，开始调查
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* 案件条 */}
       {caseData && (
         <div className="case-card p-4 flex flex-wrap items-center justify-between gap-y-2">
@@ -171,13 +215,31 @@ export default function GamePage() {
         </div>
       )}
 
+      {/* 常驻玩法提示条（可关闭） */}
+      {showHowtoBar && (
+        <div className="case-card px-4 py-2.5 flex items-center gap-2 flex-wrap text-xs text-[#8a94a8]">
+          <span className="text-[#d4a24c] font-bold shrink-0">🎮 玩法三步</span>
+          <span>① 点搜证框下方的方向词，在真实知乎里找线索</span>
+          <span className="text-[#5a6478]">→</span>
+          <span>② 点嫌疑人，像聊天一样自由提问</span>
+          <span className="text-[#5a6478]">→</span>
+          <span>③ 线索够了点右侧「推理指认」</span>
+          <button
+            onClick={() => { setShowHowtoBar(false); try { localStorage.setItem('kanshan_howto_bar_closed', '1'); } catch {} }}
+            className="ml-auto text-[#5a6478] hover:text-[#8a94a8] shrink-0"
+            title="知道了"
+          >✕</button>
+        </div>
+      )}
+
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
         {/* 左：搜证+对话 */}
         <div className="lg:col-span-2 space-y-4">
           <SearchPanel
             keyword={searchKeyword}
             setKeyword={setSearchKeyword}
-            onSearch={handleSearch}
+            onSearch={() => handleSearch()}
+            onQuickSearch={(kw) => { setSearchKeyword(kw); handleSearch(kw); }}
             results={searchResults}
             loading={loading}
             hints={caseData?.search_directions?.map((d: any) => ({ keyword: d.keyword, hint: d.hint }))}
@@ -255,10 +317,18 @@ export default function GamePage() {
               <span className="stamp stamp-gold text-xs">结案陈词</span>
             </div>
             <h3 className="font-serif-detective text-2xl font-bold text-[#e8dcc4] mb-2">说出你的推理</h3>
-            <p className="text-xs text-[#8a94a8] leading-relaxed mb-4">
+            <p className="text-xs text-[#8a94a8] leading-relaxed mb-3">
               真相是什么？谁是幕后推手，动机又是什么？结合你收集到的线索写下推理——
               看山会亲自评估你的推理质量，它和关键证据一样影响结局。
             </p>
+            <button
+              onClick={() => setReasoningText('我认为真凶是____。关键证据是____，它说明____。TA的动机是____，手法是____。所以真相就是____。')}
+              disabled={loading || reasoningText.trim().length > 0}
+              className="btn-ghost px-3 py-1 text-xs mb-3 disabled:opacity-30"
+              title={reasoningText.trim().length > 0 ? '已有内容，不再覆盖' : '按"真凶+证据+动机+手法"生成一份陈词骨架'}
+            >
+              📝 不会写？一键套用陈词模板（填空即可）
+            </button>
             <textarea
               value={reasoningText}
               onChange={(e) => setReasoningText(e.target.value)}
