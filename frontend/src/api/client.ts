@@ -27,6 +27,7 @@ async function getJSON(path: string) {
 export const api = {
   fingerprint: {
     analyze: (userId: string) => postJSON('/fingerprint/analyze', { userId }),
+    analyzeSession: () => postJSON('/fingerprint/analyze-session', {}),
     seedUsers: () => getJSON('/fingerprint/seed-users'),
   },
   companion: {
@@ -57,6 +58,11 @@ export const api = {
     saveRecord: (data: any) => postJSON('/archive/record', data),
     records: (userId: string) => getJSON(`/archive/records?userId=${encodeURIComponent(userId)}`),
     quota: () => getJSON('/quota'),
+  },
+  auth: {
+    config: () => getJSON('/auth/config'),
+    me: () => getJSON('/auth/me'),
+    logout: () => postJSON('/auth/logout', {}),
   },
   social: {
     detectiveBoard: (fingerprint: any) => postJSON('/social/detective-board', { fingerprint }),

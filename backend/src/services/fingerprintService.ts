@@ -37,6 +37,18 @@ export async function analyzeFingerprint(userId: string): Promise<FingerprintRes
     return getFallbackFingerprint(userId);
   }
 
+  return analyzeFromAnswersText(cacheKey, userId, answersText);
+}
+
+/** 登录用户路径：直接用其授权数据（user/contents）分析，无需搜索，精准度更高 */
+export async function analyzeFingerprintFromContents(userId: string, answersText: string): Promise<FingerprintResult> {
+  const cacheKey = `fingerprint:session:${userId}`;
+  const cached = cache.get(cacheKey) as FingerprintResult | undefined;
+  if (cached) return cached;
+  return analyzeFromAnswersText(cacheKey, userId, answersText);
+}
+
+async function analyzeFromAnswersText(cacheKey: string, userId: string, answersText: string): Promise<FingerprintResult> {
   if (!answersText.trim()) {
     return getFallbackFingerprint(userId);
   }
@@ -101,5 +113,5 @@ function getFallbackFingerprint(userId: string): FingerprintResult {
   };
 }
 
-export const fingerprintService = { analyzeFingerprint };
+export const fingerprintService = { analyzeFingerprint, analyzeFingerprintFromContents };
 export default fingerprintService;

@@ -19,7 +19,9 @@
     "ZHIHU_API_BASE": "https://developer.zhihu.com",
     "AGENT_API_BASE": "https://developer.zhihu.com",
     "AGENT_MODEL": "zhida-fast-1p5",
-    "NODE_ENV": "production"
+    "NODE_ENV": "production",
+    "ZHIHU_OAUTH_APP_ID": "",
+    "OAUTH_REDIRECT_URI": "https://kanshan-detective.3082780889.workers.dev/api/auth/callback"
   },
   "dev": {
     "port": 3001

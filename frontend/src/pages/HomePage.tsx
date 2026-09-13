@@ -12,9 +12,48 @@ export default function HomePage() {
 
   const [inputId, setInputId] = useState('');
   const [seedUsers, setSeedUsers] = useState<any[]>([]);
+  const [oauthEnabled, setOauthEnabled] = useState(false);
+  const [oauthHandle, setOauthHandle] = useState<string | null>(null);
+
+  // 知乎账号登录后的建档流程：直接用授权的真实回答数据，不走搜索
+  const handleSessionAnalyze = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const { userId, fingerprint } = await api.fingerprint.analyzeSession();
+      setUserId(userId);
+      setFingerprint(fingerprint);
+      setOauthHandle(userId);
+      setPage('fingerprint');
+      api.companion.generate(fingerprint)
+        .then(({ companion }) => {
+          setCompanion(companion);
+          return api.companion.intro(fingerprint, companion);
+        })
+        .then(({ intro }) => setCompanionIntro(intro))
+        .catch(() => {
+          // 搭档生成失败不影响档案展示与独立探索
+        });
+    } catch (err: any) {
+      setError(err.message || '登录用户分析失败，可改用下方方式建档');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
     api.fingerprint.seedUsers().then((data: any) => setSeedUsers(data.users || [])).catch(() => {});
+    api.auth.config().then((data: any) => setOauthEnabled(!!data.enabled)).catch(() => {});
+    // OAuth 回调后带 /?login=ok|error 返回首页
+    const loginState = new URLSearchParams(window.location.search).get('login');
+    if (loginState) window.history.replaceState(null, '', window.location.pathname);
+    if (loginState === 'ok') {
+      handleSessionAnalyze();
+    } else {
+      api.auth.me().then((data: any) => {
+        if (data.authenticated) setOauthHandle(data.handle);
+      }).catch(() => {});
+    }
   }, []);
 
   const handleAnalyze = async (uid?: string) => {
@@ -108,6 +147,19 @@ export default function HomePage() {
             ① 点下方金色按钮，一键建立侦探档案；② 挑一份卷宗，组队开查；③ 搜证、审讯证人、写下你的推理。
           </KanshanBubble>
         </div>
+
+        {/* 知乎账号登录（官方 OAuth；登录人数计入人气奖评定，启用凭证后自动出现） */}
+        {oauthEnabled && (
+          <a
+            href="/api/auth/login"
+            className="btn-primary w-full py-3.5 text-sm flex items-center justify-center gap-2 anim-pulse-gold mb-4"
+          >
+            🔑 使用知乎账号登录 · 直接分析你的真实回答
+          </a>
+        )}
+        {oauthHandle && (
+          <p className="mb-4 text-xs text-[#6dbb8a]">✓ 已用知乎账号登录（{oauthHandle}）——指纹与卷宗将记录在该账号下</p>
+        )}
 
         {/* 快速体验通道：评委与新玩家的首选路径，免输入一键建档 */}
         {seedUsers.length > 0 && (

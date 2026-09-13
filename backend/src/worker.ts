@@ -8,6 +8,7 @@ import { caseGenerator } from './services/caseGenerator.js';
 import { caseStore } from './services/caseStore.js';
 import { zhihuApi } from './services/zhihuApi.js';
 import { agentApi } from './services/agentApi.js';
+import { oauthService } from './services/oauthService.js';
 import { socialPrompt } from './prompts/social.js';
 import { seedUsers } from './data/seedUsers.js';
 import { companionTemplates } from './data/companionTemplates.js';
@@ -335,6 +336,60 @@ app.post('/api/social/detective-board', async (c) => {
   );
 
   return c.json({ detectiveBoard, cardText });
+});
+
+/* ---------------- 知乎 OAuth 登录（人气奖统计依赖登录人数；未配置凭证时整体安全降级） ---------------- */
+app.get('/api/auth/config', (c) => c.json({ enabled: oauthService.isOAuthConfigured() }));
+
+app.get('/api/auth/login', async (c) => {
+  if (!oauthService.isOAuthConfigured()) return c.json({ error: 'OAuth 未配置' }, 404);
+  return c.redirect(await oauthService.buildAuthorizeURL(), 302);
+});
+
+app.get('/api/auth/callback', async (c) => {
+  if (!oauthService.isOAuthConfigured()) return c.redirect('/?login=error');
+  // 黑客松实测回调参数为 authorization_code（兼容 code）
+  const code = c.req.query('authorization_code') || c.req.query('code') || '';
+  const state = c.req.query('state') || '';
+  if (!code || !(await oauthService.consumeState(state))) return c.redirect('/?login=error');
+  try {
+    const session = await oauthService.exchangeAndCreateSession(code);
+    c.header('Set-Cookie', oauthService.buildSessionCookie(session.sid));
+    return c.redirect('/?login=ok');
+  } catch (err: any) {
+    console.error(`[OAuth] 回调换取Token失败: ${err.message}`);
+    return c.redirect('/?login=error');
+  }
+});
+
+app.get('/api/auth/me', async (c) => {
+  const sid = oauthService.parseSessionCookie(c.req.header('Cookie'));
+  const session = sid ? await oauthService.getSessionBySid(sid) : null;
+  if (!session) return c.json({ authenticated: false });
+  return c.json({ authenticated: true, handle: session.handle, loginAt: session.loginAt });
+});
+
+app.post('/api/auth/logout', async (c) => {
+  const sid = oauthService.parseSessionCookie(c.req.header('Cookie'));
+  if (sid) await oauthService.destroySession(sid);
+  c.header('Set-Cookie', oauthService.buildClearCookie());
+  return c.json({ ok: true });
+});
+
+/* 登录用户专属：用其授权的真实回答数据生成思维指纹（不走搜索，更精准） */
+app.post('/api/fingerprint/analyze-session', async (c) => {
+  const sid = oauthService.parseSessionCookie(c.req.header('Cookie'));
+  const session = sid ? await oauthService.getSessionBySid(sid) : null;
+  if (!session) return c.json({ error: '未登录或登录已过期' }, 401);
+  let answersText = '';
+  try {
+    answersText = await oauthService.fetchSessionAnswersText(session.accessToken);
+  } catch (err: any) {
+    console.error(`[OAuth] 拉取用户内容失败: ${err.message}`);
+    return c.json({ error: '获取你的知乎内容失败，请稍后重试' }, 502);
+  }
+  const fingerprint = await fingerprintService.analyzeFingerprintFromContents(session.handle, answersText);
+  return c.json({ userId: session.handle, fingerprint, viaOAuth: true });
 });
 
 /* ---------------- 静态资源（前端 SPA） ---------------- */
