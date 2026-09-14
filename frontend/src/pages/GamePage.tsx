@@ -128,15 +128,20 @@ export default function GamePage() {
     }
   };
 
-  const handleSubmitReasoning = async () => {
-    if (reasoningText.trim().length < 10) return;
+  const handleSubmitReasoning = async (skip = false) => {
+    const finalText = skip ? '' : reasoningText;
+    if (!skip && finalText.trim().length < 10) return;
     setLoading(true);
     setError(null);
     try {
-      await companionComment('reasoning', `我的推理：${reasoningText.trim().substring(0, 200)}`);
-      const result = await api.game.evaluate({ clues }, caseId, reasoningText.trim());
+      await companionComment('reasoning', skip ? '我选择直接揭晓真相' : `我的推理：${finalText.trim().substring(0, 200)}`);
+      const result = await api.game.evaluate({ clues }, caseId, finalText.trim(), skip);
       setEnding(result.endingType, result.ending, result.truth);
-      setReasoningResult(reasoningText.trim(), result.reasoningScore, result.reasoningComment);
+      setReasoningResult(
+        finalText.trim(),
+        result.reasoningScore,
+        skip ? '你选择直接观看真相——下局试试写下推理，评分更高，结局也更精彩。' : result.reasoningComment,
+      );
       setShowReasoningModal(false);
       setPage('result');
     } catch (err: any) {
@@ -348,13 +353,22 @@ export default function GamePage() {
                   再查查
                 </button>
                 <button
-                  onClick={handleSubmitReasoning}
+                  onClick={() => handleSubmitReasoning(false)}
                   disabled={loading || reasoningText.trim().length < 10}
                   className="btn-primary px-6 py-2 text-sm"
                 >
                   {loading ? '看山评估中...' : '提交推理'}
                 </button>
               </div>
+            </div>
+            <div className="text-center mt-3">
+              <button
+                onClick={() => handleSubmitReasoning(true)}
+                disabled={loading}
+                className="text-xs text-[#5a6478] hover:text-[#8a94a8] underline underline-offset-2 disabled:opacity-40"
+              >
+                懒得思考？直接揭晓真相（结局会标记为「真相旁观者」）
+              </button>
             </div>
             {loading && (
               <p className="text-xs text-[#d4a24c] anim-pulse-gold mt-3 text-center">

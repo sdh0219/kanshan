@@ -74,7 +74,17 @@ export default function EndingReveal({ endingType, endingText, truth, clues, com
         </p>
       )}
 
-      {(reasoningComment || reasoningScore != null) && (
+      {/* 懒人通道：未写推理时显示旁观者卡（且不显示推理评分卡） */}
+      {!reasoningText && reasoningComment && (
+        <div className="bg-[#0a0c10]/70 rounded border border-[#3d5a7a]/60 p-5 mb-6 max-w-2xl mx-auto text-left">
+          <div className="flex items-center justify-between mb-2">
+            <p className="text-xs text-[#5a6478] tracking-widest">SPECTATOR · 真相旁观者</p>
+          </div>
+          <p className="text-sm text-[#c9d2e0] leading-relaxed">{reasoningComment}</p>
+        </div>
+      )}
+
+      {(reasoningText || reasoningScore != null) && (
         <div className="bg-[#0a0c10]/70 rounded border border-[#8a6d35]/40 p-5 mb-6 max-w-2xl mx-auto text-left">
           <div className="flex items-center justify-between mb-2">
             <p className="text-xs text-[#5a6478] tracking-widest">看山对你的推理的点评</p>

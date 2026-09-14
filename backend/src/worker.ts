@@ -46,7 +46,15 @@ app.post('/api/fingerprint/analyze', async (c) => {
   if (!userId) return c.json({ error: 'userId 必填' }, 400);
   const seedUser = (seedUsers as any)[userId];
   if (seedUser) {
-    return c.json({ userId: seedUser.userId, displayName: seedUser.displayName, fingerprint: seedUser.fingerprint, cached: true });
+    // 预设侦探：静态数据 + 代码增强出新字段（label/interpret/scene_story），与 AI 路径体验一致
+    const dims = seedUser.fingerprint.dimensions.map(fingerprintService.ensureLabelInterpret);
+    const fingerprint = {
+      ...seedUser.fingerprint,
+      dimensions: dims,
+      scene_story: fingerprintService.deriveSceneStory(dims),
+      confidence: 'full' as const,
+    };
+    return c.json({ userId: seedUser.userId, displayName: seedUser.displayName, fingerprint, cached: true });
   }
   const result = await fingerprintService.analyzeFingerprint(userId);
   return c.json({ userId, fingerprint: result, cached: false });
@@ -377,19 +385,27 @@ app.post('/api/auth/logout', async (c) => {
   return c.json({ ok: true });
 });
 
-/* 登录用户专属：用其授权的真实回答数据生成思维指纹（不走搜索，更精准） */
+/* 登录用户专属：用其授权的真实回答数据生成思维指纹（不走搜索，更精准）；小样本自动降级轻量档案 */
 app.post('/api/fingerprint/analyze-session', async (c) => {
   const sid = oauthService.parseSessionCookie(c.req.header('Cookie'));
   const session = sid ? await oauthService.getSessionBySid(sid) : null;
   if (!session) return c.json({ error: '未登录或登录已过期' }, 401);
+  // 被动侧写与内容拉取互不阻塞，任一失败都只降级不报错
   let answersText = '';
-  try {
-    answersText = await oauthService.fetchSessionAnswersText(session.accessToken);
-  } catch (err: any) {
-    console.error(`[OAuth] 拉取用户内容失败: ${err.message}`);
-    return c.json({ error: '获取你的知乎内容失败，请稍后重试' }, 502);
+  let passive: any = null;
+  const [contentRes, passiveRes] = await Promise.allSettled([
+    oauthService.fetchSessionAnswersText(session.accessToken),
+    oauthService.fetchSessionPassiveProfile(session.accessToken),
+  ]);
+  if (contentRes.status === 'fulfilled') {
+    answersText = contentRes.value;
+  } else {
+    console.error(`[OAuth] 拉取用户内容失败（降级轻量档案）: ${contentRes.reason?.message}`);
   }
-  const fingerprint = await fingerprintService.analyzeFingerprintFromContents(session.handle, answersText);
+  if (passiveRes.status === 'fulfilled') {
+    passive = passiveRes.value;
+  }
+  const fingerprint = await fingerprintService.analyzeFingerprintFromContents(session.handle, answersText, passive || undefined);
   return c.json({ userId: session.handle, fingerprint, viaOAuth: true });
 });
 

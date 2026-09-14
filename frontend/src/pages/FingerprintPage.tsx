@@ -8,6 +8,8 @@ export default function FingerprintPage() {
 
   const dims = fingerprint?.dimensions || [];
   const profile = fingerprint?.detective_profile;
+  const passive = fingerprint?.passive_profile;
+  const hasPassive = !!(passive && (passive.nickname || passive.headline || passive.followees?.length || passive.favlists?.length));
 
   const playerRadarData = dims.map((d: any) => ({
     dimension: d.name.split('-')[0],
@@ -36,6 +38,22 @@ export default function FingerprintPage() {
         <span className="stamp stamp-gold text-sm">已建档</span>
       </div>
 
+      {/* 样本量与档案置信度 */}
+      <div className="case-card px-4 py-2.5 flex items-center gap-3 flex-wrap text-xs">
+        {typeof fingerprint?.sampleCount === 'number' && fingerprint.sampleCount > 0 && (
+          <span className="text-[#8a94a8]">📊 分析样本：<span className="text-[#e8dcc4]">{fingerprint.sampleCount}</span> 条有效内容</span>
+        )}
+        {fingerprint?.confidence === 'light' ? (
+          <span className="px-2 py-0.5 rounded-full border border-[#8a6d35]/50 text-[#d4a24c]">
+            轻量档案 · 内容样本不足，这是初步画像——登录知乎账号后档案会更厚
+          </span>
+        ) : fingerprint?.confidence === 'full' ? (
+          <span className="px-2 py-0.5 rounded-full border border-[#4a7a5c]/60 text-[#6dbb8a]">
+            完整档案 · 样本充足，画像可信度高
+          </span>
+        ) : null}
+      </div>
+
       {/* 雷达图区 */}
       <section className="case-card p-8 texture-paper">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
@@ -55,24 +73,42 @@ export default function FingerprintPage() {
 
         <div className="divider-gold my-6" />
 
-        {/* 维度明细 */}
-        <div className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
+          {/* 维度明细：分数 + 人话标签 + 场景化解读 */}
+          <div className="space-y-3">
             {dims.map((d: any, i: number) => (
-              <div key={i} className="bg-[#0a0c10]/60 rounded border border-[#232a3b] p-3">
-                <p className="text-xs text-[#5a6478] mb-1">{d.name}</p>
-                <div className="flex items-baseline gap-2 mb-1.5">
-                  <span className="font-serif-detective text-xl font-bold text-[#e8dcc4]">
+              <div key={i} className="bg-[#0a0c10]/60 rounded border border-[#232a3b] p-4">
+                <div className="flex items-center justify-between gap-3 mb-2 flex-wrap">
+                  <p className="text-xs text-[#5a6478]">{d.name}</p>
+                  {(d.label || d.toward) && (
+                    <span className="px-2 py-0.5 rounded-full border border-[#6b9bd1]/50 text-[#6b9bd1] text-xs">
+                      {d.label || d.toward}
+                    </span>
+                  )}
+                </div>
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="h-1.5 flex-1 bg-[#232a3b] rounded-full overflow-hidden">
+                    <div className="h-full bg-gradient-to-r from-[#8a6d35] to-[#d4a24c]" style={{ width: `${d.score * 10}%` }} />
+                  </div>
+                  <span className="font-serif-detective text-sm font-bold text-[#e8dcc4] shrink-0">
                     {d.score.toFixed(1)}
                   </span>
-                  <span className="text-xs text-[#d4a24c]">{d.toward}</span>
                 </div>
-                <div className="h-1 bg-[#232a3b] rounded-full overflow-hidden">
-                  <div className="h-full bg-gradient-to-r from-[#8a6d35] to-[#d4a24c]" style={{ width: `${d.score * 10}%` }} />
-                </div>
+                {d.interpret && (
+                  <p className="text-xs text-[#c9d2e0] leading-relaxed">
+                    <span className="text-[#d4a24c] mr-1">解读</span>{d.interpret}
+                  </p>
+                )}
               </div>
             ))}
           </div>
+
+          {/* 本案演绎 */}
+          {fingerprint?.scene_story && (
+            <div className="bg-[#0a0c10]/60 rounded border border-[#8a6d35]/40 p-5">
+              <p className="text-xs text-[#d4a24c] tracking-widest mb-2">🎭 如果你走进案发现场</p>
+              <p className="text-sm text-[#c9d2e0] leading-relaxed">{fingerprint.scene_story}</p>
+            </div>
+          )}
 
           {/* 优势弱项 */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -97,8 +133,41 @@ export default function FingerprintPage() {
           <p className="text-sm text-[#8a94a8] leading-relaxed border-l-2 border-[#8a6d35] pl-4">
             {fingerprint?.summary}
           </p>
-        </div>
       </section>
+
+      {/* 被动账号侧写（OAuth 登录用户专属，全程无需用户输入） */}
+      {hasPassive && (
+        <section className="case-card p-6">
+          <div className="flex items-center gap-3 mb-4 flex-wrap">
+            <p className="text-xs text-[#5a6478] tracking-widest">🪪 账号侧写 · 这些信息你一个字都没写</p>
+            {passive?.nickname && <span className="font-serif-detective text-base font-bold text-[#e8dcc4]">{passive.nickname}</span>}
+            {passive?.gender && <span className="tag text-xs">{passive.gender}</span>}
+          </div>
+          {passive?.headline && (
+            <p className="text-xs text-[#8a94a8] italic mb-3">「{passive.headline}」</p>
+          )}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <p className="text-xs text-[#5a6478] mb-2">
+                关注的人{typeof passive?.followeeCount === 'number' ? `（共 ${passive.followeeCount} 个，前5）` : '（前5）'}
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {(passive?.followees?.length ? passive.followees : ['（本次未获取到）']).map((n: string, i: number) => (
+                  <span key={i} className="tag text-xs">{n}</span>
+                ))}
+              </div>
+            </div>
+            <div>
+              <p className="text-xs text-[#5a6478] mb-2">收藏夹（你的兴趣线索）</p>
+              <div className="flex flex-wrap gap-2">
+                {(passive?.favlists?.length ? passive.favlists : ['（本次未获取到）']).map((n: string, i: number) => (
+                  <span key={i} className="tag text-xs">{n}</span>
+                ))}
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* 搭档卡 */}
       {companion ? (

@@ -2,6 +2,7 @@
 // 凭证来源：活动页创建项目后分配的 app_id / app_key；app_key 只能存 Worker Secret（ZHIHU_OAUTH_APP_KEY）
 // 官方流程：authorize 跳转 → 回调收 authorization_code → POST /access_token 换 token → 带 X-OAuth-Token 调用户数据
 import { env, getKV } from '../utils/runtime.js';
+import type { PassiveProfile } from './fingerprintService.js';
 
 const OPENAPI = 'https://openapi.zhihu.com';
 const API_BASE = 'https://developer.zhihu.com';
@@ -132,12 +133,86 @@ export async function fetchSessionAnswersText(accessToken: string): Promise<stri
   if (data && typeof data.Code === 'number' && data.Code !== 0) {
     throw new Error(`用户内容接口业务错误 Code=${data.Code}`);
   }
-  const items = data?.Data?.Items || [];
+  const items = data?.Data?.Items || data?.data?.items || [];
   return (Array.isArray(items) ? items : [])
-    .map((item: any) => `${item.Title || item.title || ''}\n${item.Summary || item.summary || ''}`)
+    .map((item: any) => `${item.Title || item.title || ''}\n${item.Summary || item.summary || item.ContentText || item.excerpt || ''}`)
     .filter((t: string) => t.trim().length > 0)
     .join('\n\n---\n\n')
     .substring(0, 8000);
+}
+
+/** 数据接口通用双头（官方约定：Access Secret 做 Bearer，OAuth Token 走 X-OAuth-Token） */
+function passiveHeaders(accessToken: string) {
+  return {
+    Authorization: `Bearer ${env('ZHIHU_ACCESS_SECRET') || ''}`,
+    'X-Request-Timestamp': String(Math.floor(Date.now() / 1000)),
+    'X-OAuth-Token': accessToken,
+  };
+}
+
+/**
+ * 被动账号侧写：不依赖用户写任何内容，直接从 OAuth 授权拿公开信息。
+ * 三路数据各自独立降级——拿不到哪路就少展示哪路，绝不因此失败。
+ */
+export async function fetchSessionPassiveProfile(accessToken: string): Promise<PassiveProfile> {
+  const profile: PassiveProfile = {};
+  const headers = passiveHeaders(accessToken);
+
+  // 1. 基本信息（openapi /user）
+  try {
+    const resp = await fetch(`${OPENAPI}/user`, { headers });
+    if (resp.ok) {
+      const data = await resp.json() as any;
+      const src = data?.data || data?.Data || data?.user || data || {};
+      profile.nickname = src.name || src.Fullname || src.fullname || undefined;
+      profile.headline = src.headline || src.Headline || undefined;
+      const g = String(src.gender ?? src.Gender ?? '').toLowerCase();
+      profile.gender = g === 'male' ? '男' : g === 'female' ? '女' : undefined;
+    }
+  } catch (err) {
+    console.error(`[OAuth] 被动侧写·基本信息失败: ${(err as Error).message}`);
+  }
+
+  // 2. 关注列表（关注的人+总数）
+  try {
+    const resp = await fetch(`${API_BASE}/api/v1/user/followees?Limit=10&Offset=0`, { headers });
+    if (resp.ok) {
+      const data = await resp.json() as any;
+      if (!(typeof data?.Code === 'number' && data.Code !== 0)) {
+        const items = data?.Data?.Items || data?.data?.items || [];
+        if (Array.isArray(items) && items.length > 0) {
+          profile.followees = items
+            .map((it: any) => it.Name || it.name || it.Title || it.title || '')
+            .filter((s: string) => s).slice(0, 5);
+        }
+        const totals = data?.Data?.Paging?.Totals || data?.data?.paging?.totals;
+        const total = Number(totals?.total ?? totals);
+        profile.followeeCount = Number.isFinite(total) && total > 0 ? total : (Array.isArray(items) ? items.length : null);
+      }
+    }
+  } catch (err) {
+    console.error(`[OAuth] 被动侧写·关注列表失败: ${(err as Error).message}`);
+  }
+
+  // 3. 收藏夹（名称能反映兴趣领域）
+  try {
+    const resp = await fetch(`${API_BASE}/api/v1/user/favlists?Limit=10&Offset=0`, { headers });
+    if (resp.ok) {
+      const data = await resp.json() as any;
+      if (!(typeof data?.Code === 'number' && data.Code !== 0)) {
+        const items = data?.Data?.Items || data?.data?.items || [];
+        if (Array.isArray(items) && items.length > 0) {
+          profile.favlists = items
+            .map((it: any) => it.Title || it.title || it.Name || it.name || '')
+            .filter((s: string) => s).slice(0, 6);
+        }
+      }
+    }
+  } catch (err) {
+    console.error(`[OAuth] 被动侧写·收藏夹失败: ${(err as Error).message}`);
+  }
+
+  return profile;
 }
 
 export const oauthService = {
@@ -151,5 +226,6 @@ export const oauthService = {
   getSessionBySid,
   destroySession,
   fetchSessionAnswersText,
+  fetchSessionPassiveProfile,
 };
 export default oauthService;

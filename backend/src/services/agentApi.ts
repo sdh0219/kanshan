@@ -7,7 +7,7 @@ interface ChatMessage {
   content: string;
 }
 
-export async function chat(messages: ChatMessage[]): Promise<string> {
+export async function chat(messages: ChatMessage[], opts?: { maxTokens?: number }): Promise<string> {
   const apiBase = env('AGENT_API_BASE') || 'https://developer.zhihu.com';
   const model = env('AGENT_MODEL') || 'zhida-fast-1p5';
   let resp;
@@ -19,7 +19,12 @@ export async function chat(messages: ChatMessage[]): Promise<string> {
         'X-Request-Timestamp': String(Math.floor(Date.now() / 1000)),
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ model, messages }),
+      body: JSON.stringify({
+        model,
+        messages,
+        // 不显式给上限时部分模型默认很小，长 JSON 会被截断成非法输出
+        ...(opts?.maxTokens ? { max_tokens: opts.maxTokens } : {}),
+      }),
       signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
     });
   } catch (err: any) {
@@ -38,17 +43,27 @@ export async function chat(messages: ChatMessage[]): Promise<string> {
 }
 
 export async function chatJSON(messages: ChatMessage[]): Promise<any> {
-  const text = await chat(messages);
-  const jsonMatch = text.match(/\{[\s\S]*\}/);
-  if (!jsonMatch) {
-    console.error('[AgentAPI] JSON解析失败:', text.substring(0, 200));
-    throw new Error('Agent返回内容无法解析为JSON');
-  }
-  try {
+  const tryParse = (text: string): any => {
+    // 清洗 markdown 代码栅栏与前后杂文，取首个 { 到最后一个 }
+    const cleaned = text.replace(/```(?:json)?/gi, '');
+    const jsonMatch = cleaned.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) {
+      console.error(`[AgentAPI] JSON解析失败，原始内容前300字: ${text.substring(0, 300)}`);
+      throw new Error('Agent返回内容无法解析为JSON');
+    }
     return JSON.parse(jsonMatch[0]);
-  } catch {
-    console.error('[AgentAPI] JSON.parse失败:', jsonMatch[0].substring(0, 200));
-    throw new Error('Agent返回JSON格式错误');
+  };
+
+  try {
+    return tryParse(await chat(messages, { maxTokens: 2000 }));
+  } catch (firstErr) {
+    // 模型偶发输出纯文本或截断：追加强制JSON指令重试一次
+    console.error(`[AgentAPI] JSON首试失败，重试: ${(firstErr as Error).message}`);
+    const retryMessages: ChatMessage[] = [
+      ...messages,
+      { role: 'user' as const, content: '你上一次的输出不是合法JSON。请重新输出：跳过所有客套和分析过程，第一个字符就是 {，最后一个字符是 }，只输出JSON本体。' },
+    ];
+    return tryParse(await chat(retryMessages, { maxTokens: 2000 }));
   }
 }
 

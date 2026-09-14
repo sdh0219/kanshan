@@ -44,8 +44,8 @@ export const api = {
       postJSON('/game/search', { keyword, state, caseId }),
     talk: (npcId: string, question: string, state: any, caseId: string) =>
       postJSON('/game/talk', { npcId, question, state, caseId }),
-    evaluate: (state: any, caseId: string, reasoning?: string) =>
-      postJSON('/game/evaluate', { state, caseId, reasoning }),
+    evaluate: (state: any, caseId: string, reasoning?: string, skipReasoning?: boolean) =>
+      postJSON('/game/evaluate', { state, caseId, reasoning, skipReasoning }),
   },
   archive: {
     cases: () => getJSON('/archive/cases'),
