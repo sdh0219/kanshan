@@ -1246,7 +1246,7 @@ flowchart LR
           <tr><th>页面</th><th>功能</th><th>核心交互</th></tr>
         </thead>
         <tbody>
-          <tr><td>首页 HomePage</td><td>输入知乎 ID 建档</td><td>输入框 + 预设用户快捷选择 + 「30 秒看懂」演示视频 + 模式选择卡片</td></tr>
+          <tr><td>首页 HomePage</td><td>输入知乎 ID 建档</td><td>输入框 + 预设用户快捷选择 + 「1 分半看懂」甜美女声演示视频 + 模式选择卡片 + 知乎账号登录</td></tr>
           <tr><td>指纹页 FingerprintPage</td><td>思维指纹展示</td><td>五维雷达图 + 侦探能力档案 + 搭档介绍</td></tr>
           <tr><td>档案室 ArchivePage</td><td>案件列表与选择</td><td>案件卡片 + 热榜生成面板 + 用户投稿面板 + 模式选择</td></tr>
           <tr><td>游戏页 GamePage</td><td>探案主界面</td><td>案件介绍 → 搜证面板 → NPC 对话 → 线索墙 → 推理 → 结局</td></tr>
@@ -1269,7 +1269,18 @@ flowchart LR
       <li><strong>异步不阻塞</strong>：组队模式中搭档插话在后台生成、就绪后自动追加到对话流，玩家无需等待即可继续搜证与审讯；建档页在思维指纹生成的瞬间即展示雷达图，搭档开场白随后异步补齐</li>
       <li><strong>拟人等待动效</strong>：所有 AI 等待期使用动态省略号与拟人文案（如「看山正在翻阅知乎的公开内容」「对方正在回应」「搭档正在思考」），明确告知系统状态，避免「像卡死」的焦虑</li>
       <li><strong>氛围音效</strong>：线索命中（清音）、结局印章（钝响）、搭档插话（轻提示）三处关键反馈配以低音量音效，导航栏提供一键静音开关（偏好持久化）</li>
-      <li><strong>全端适配</strong>：首页内嵌「30 秒看懂」带解说演示视频，降低新人理解成本；移动端（390px 视口）全流程无横向溢出</li>
+      <li><strong>全端适配</strong>：首页内嵌「1 分半看懂」甜美女声带字幕演示视频，降低新人理解成本；移动端（390px 视口）全流程无横向溢出</li>
+    </ul>
+
+    <h3>7.5 版本迭代：来自真实玩家反馈的四项优化（2026-09-14）</h3>
+    <p class="section-desc">上线后收集真实玩家反馈，24 小时内完成四项迭代并部署——「反馈→迭代→上线」的节奏是边缘架构 + 一键部署红利的直接体现</p>
+    <div class="card-grid">
+      <div class="card"><div class="card-num">1</div><h4>指纹报告说人话</h4><p>回应「能力打分看不懂」：每维新增人话标签与场景化解读，新增「如果你走进案发现场」演绎段，把五维画像揉成现场故事</p></div>
+      <div class="card"><div class="card-num">2</div><h4>小样本兜底</h4><p>回应「12 篇回答分析不出来」：样本量徽章 + 轻量档案自动降级——大多数知乎用户回答数是个位数，轻量路径才是主流路径</p></div>
+      <div class="card"><div class="card-num">3</div><h4>懒人通道</h4><p>回应「懒得思考想看答案」：「直接揭晓真相」通道，结局标记「真相旁观者」并引导下局写推理换更高评级</p></div>
+      <div class="card"><div class="card-num">4</div><h4>账号侧写</h4><p>回应「多点被动获取的信息」：OAuth 授权后零输入展示昵称、签名、关注列表、收藏夹</p></div>
+    </div>
+    <p class="section-desc">同期上线：知乎账号登录（OAuth 授权流程）+ 新手引导体系（侦探手册 / 玩法三步提示条 / 搜证方向词一键检索 / 结案陈词模板）</p>
     </ul>
   </section>
 
@@ -1323,15 +1334,15 @@ flowchart LR
     <ul>
       <li><strong>KV 写并发</strong>：KV 为最终一致，高频并发写场景需迁移到 D1 数据库（caseStore 6 函数是唯一数据访问面，替换零改动）</li>
       <li><strong>生成质量依赖 Agent</strong>：normalizeGeneratedCase 只做字段级防御，可增加「生成后自动试玩校验」环节</li>
-      <li><strong>记录无认证</strong>：user_id 由前端声明，接入知乎 OAuth 后应以登录态为准</li>
+      <li><strong>记录与登录态关联</strong>：知乎 OAuth 登录已于 2026-09-13 上线（会话态 + 被动账号侧写），下一步把探案记录与登录账号绑定，进一步杜绝伪造 ID</li>
     </ul>
 
     <h3>后续演进方向</h3>
     <div class="card-grid">
       <div class="card">
         <div class="card-num">→</div>
-        <h4>接入知乎 OAuth</h4>
-        <p>真实登录态替代手动输入 ID，登录人数作为人气奖评定依据</p>
+        <h4>✅ 接入知乎 OAuth（已完成，2026-09-13 上线）</h4>
+        <p>真实登录态 + 被动账号侧写已就绪，登录人数作为人气奖评定依据</p>
       </div>
       <div class="card">
         <div class="card-num">→</div>
