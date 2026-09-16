@@ -15,14 +15,11 @@ export default function FingerprintPage() {
     dimension: d.name.split('-')[0],
     score: 10 - d.score,
   }));
-  const companionRadarData = dims.map((d: any) => {
-    const sorted = [...dims].sort((a: any, b: any) => a.score - b.score);
-    const isWeak = sorted.slice(0, 2).includes(d);
-    return {
-      dimension: d.name.split('-')[0],
-      score: isWeak ? 9 : 5,
-    };
-  });
+  // 互补 = 玩家雷达的镜像：你的凹处就是搭档的凸处（绘制值互补相加恒为 10）
+  const companionRadarData = dims.map((d: any) => ({
+    dimension: d.name.split('-')[0],
+    score: d.score,
+  }));
 
   return (
     <div className="space-y-6">
@@ -65,7 +62,7 @@ export default function FingerprintPage() {
           </div>
           <div>
             <h3 className="font-serif-detective text-lg font-bold text-[#d4a24c] mb-4">
-              搭档互补能力 <span className="text-xs font-normal text-[#5a6478]">（组队共探时启用）</span>
+              搭档互补能力 <span className="text-xs font-normal text-[#5a6478]">（与你的雷达互为镜像——你的凹处正是TA的凸处）</span>
             </h3>
             <RadarChart data={companionRadarData} color="#d4a24c" label="搭档能力" />
           </div>

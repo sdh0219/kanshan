@@ -148,8 +148,8 @@ export default function HomePage() {
           </KanshanBubble>
         </div>
 
-        {/* 知乎账号登录（官方 OAuth；登录人数计入人气奖评定，启用凭证后自动出现） */}
-        {oauthEnabled && (
+        {/* 知乎账号登录（官方 OAuth；登录人数计入人气奖评定，启用凭证后自动出现；已登录则隐藏避免误导） */}
+        {oauthEnabled && !oauthHandle && (
           <a
             href="/api/auth/login"
             className="btn-primary w-full py-3.5 text-sm flex items-center justify-center gap-2 anim-pulse-gold mb-4"

@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 360" width="640" height="360">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0c1424"/><stop offset="1" stop-color="#0a0c10"/>
+    </linearGradient>
+    <filter id="grain"><feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" stitchTiles="stitch"/><feColorMatrix type="saturate" values="0"/><feComponentTransfer><feFuncA type="linear" slope="0.06"/></feComponentTransfer><feComposite operator="over" in2="SourceGraphic"/></filter>
+  </defs>
+  <rect width="640" height="360" fill="url(#bg)"/>
+  <!-- 散落的头条报纸 -->
+  <g transform="rotate(-8 200 140)">
+    <rect x="80" y="70" width="230" height="150" rx="4" fill="#141d30" stroke="#232a3b" stroke-width="2"/>
+    <rect x="96" y="88" width="140" height="14" rx="2" fill="#2a3245"/>
+    <rect x="96" y="114" width="196" height="4" fill="#1c2536"/><rect x="96" y="124" width="180" height="4" fill="#1c2536"/><rect x="96" y="134" width="190" height="4" fill="#1c2536"/>
+    <rect x="96" y="152" width="90" height="52" fill="#182236"/>
+    <rect x="196" y="152" width="96" height="4" fill="#1c2536"/><rect x="196" y="162" width="86" height="4" fill="#1c2536"/><rect x="196" y="172" width="92" height="4" fill="#1c2536"/>
+    <circle cx="240" cy="95" r="10" fill="none" stroke="#d4a24c" stroke-width="2"/>
+  </g>
+  <g transform="rotate(9 470 220)">
+    <rect x="330" y="150" width="250" height="160" rx="4" fill="#131b2c" stroke="#232a3b" stroke-width="2"/>
+    <rect x="348" y="170" width="150" height="13" rx="2" fill="#2a3245"/>
+    <rect x="348" y="196" width="214" height="4" fill="#1c2536"/><rect x="348" y="206" width="200" height="4" fill="#1c2536"/><rect x="348" y="216" width="208" height="4" fill="#1c2536"/><rect x="348" y="226" width="190" height="4" fill="#1c2536"/>
+    <rect x="348" y="244" width="100" height="50" fill="#182236"/>
+    <circle cx="470" cy="268" r="16" fill="none" stroke="#3d5a7a" stroke-width="2"/>
+  </g>
+  <!-- 上升趋势线（热榜） -->
+  <polyline points="80,300 180,270 260,286 340,240 430,252 540,196" fill="none" stroke="#d4a24c" stroke-width="3" stroke-linecap="round" opacity="0.9"/>
+  <g fill="#d4a24c">
+    <circle cx="80" cy="300" r="4"/><circle cx="180" cy="270" r="4"/><circle cx="260" cy="286" r="4"/><circle cx="340" cy="240" r="4"/><circle cx="430" cy="252" r="4"/><circle cx="540" cy="196" r="5"/>
+  </g>
+  <polygon points="540,196 528,200 536,210" fill="#d4a24c"/>
+  <!-- 顶部热度火苗点缀 -->
+  <g fill="#d4a24c" opacity="0.85">
+    <path d="M60 60 q6 -14 0 -24 q14 8 8 24 q8 -4 6 -12 q10 12 -2 20 q-14 6 -12 -8z"/>
+    <path d="M580 50 q5 -12 0 -20 q12 7 7 20 q7 -3 5 -10 q9 10 -2 17 q-12 5 -10 -7z" opacity="0.7"/>
+  </g>
+  <rect width="640" height="360" fill="#0a0c10" opacity="0.24" filter="url(#grain)"/>
+</svg>

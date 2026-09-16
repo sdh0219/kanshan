@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 360" width="640" height="360">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#0c1424"/><stop offset="1" stop-color="#0a0c10"/>
+    </linearGradient>
+    <radialGradient id="lamp" cx="0.72" cy="0.28" r="0.75">
+      <stop offset="0" stop-color="#d4a24c" stop-opacity="0.32"/><stop offset="1" stop-color="#d4a24c" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="grain"><feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" stitchTiles="stitch"/><feColorMatrix type="saturate" values="0"/><feComponentTransfer><feFuncA type="linear" slope="0.06"/></feComponentTransfer><feComposite operator="over" in2="SourceGraphic"/></filter>
+  </defs>
+  <rect width="640" height="360" fill="url(#bg)"/>
+  <rect width="640" height="360" fill="url(#lamp)"/>
+  <!-- 桌面 -->
+  <polygon points="0,250 640,220 640,360 0,360" fill="#131b2c"/>
+  <line x1="0" y1="250" x2="640" y2="220" stroke="#232a3b" stroke-width="2"/>
+  <!-- 桌灯 -->
+  <line x1="470" y1="60" x2="470" y2="150" stroke="#2a3245" stroke-width="4"/>
+  <polygon points="470,150 432,168 508,168" fill="#1a2438" stroke="#2a3245" stroke-width="2"/>
+  <ellipse cx="470" cy="172" rx="40" ry="10" fill="#d4a24c" opacity="0.55"/>
+  <circle cx="470" cy="160" r="6" fill="#d4a24c" opacity="0.9"/>
+  <!-- 空白卷宗夹 -->
+  <g transform="rotate(-4 240 260)">
+    <rect x="120" y="200" width="240" height="130" rx="6" fill="#1a2438" stroke="#2a3245" stroke-width="2"/>
+    <rect x="120" y="200" width="240" height="22" rx="6" fill="#232a3b"/>
+    <rect x="140" y="240" width="200" height="4" fill="#2a3245"/>
+    <rect x="140" y="254" width="180" height="4" fill="#222b3e"/>
+    <rect x="140" y="268" width="192" height="4" fill="#222b3e"/>
+    <rect x="140" y="282" width="150" height="4" fill="#222b3e"/>
+    <circle cx="330" cy="211" r="3" fill="#5a6478"/>
+  </g>
+  <!-- 钢笔 -->
+  <g transform="rotate(24 420 280)">
+    <rect x="380" y="272" width="90" height="7" rx="3.5" fill="#2a3245"/>
+    <polygon points="470,272 492,275.5 470,279" fill="#d4a24c"/>
+    <rect x="380" y="272" width="14" height="7" rx="3" fill="#d4a24c" opacity="0.6"/>
+  </g>
+  <!-- 咖啡杯 -->
+  <g transform="translate(80,150)">
+    <rect x="0" y="0" width="30" height="34" rx="4" fill="#1a2438" stroke="#2a3245" stroke-width="2"/>
+    <path d="M30 8 q14 2 0 18" fill="none" stroke="#2a3245" stroke-width="2.5"/>
+    <path d="M10 -6 q3 -6 0 -10 M17 -6 q3 -6 0 -10" fill="none" stroke="#5a6478" stroke-width="2" stroke-linecap="round" opacity="0.6"/>
+  </g>
+  <!-- 问号印章 -->
+  <g transform="rotate(-14 540 90)" opacity="0.9">
+    <rect x="506" y="66" width="70" height="40" rx="4" fill="none" stroke="#c05252" stroke-width="2.5"/>
+    <text x="541" y="93" font-family="serif" font-size="22" fill="#c05252" text-anchor="middle" font-weight="bold">悬</text>
+  </g>
+  <rect width="640" height="360" fill="#0a0c10" opacity="0.24" filter="url(#grain)"/>
+</svg>

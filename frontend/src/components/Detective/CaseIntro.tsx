@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { KanshanPortrait, KanshanBubble } from '../LiuKanshan';
+import { caseCover } from '../../utils/caseCovers';
 
 interface CaseIntroProps {
   caseData: any;
@@ -32,6 +33,15 @@ export default function CaseIntro({ caseData, companionIntro, onStart, mode }: C
   return (
     <div className="max-w-3xl mx-auto py-8 anim-fade-up">
       <div className="case-card p-10 texture-paper file-lines">
+        {/* 案件封面插画：营造卷宗故事感 */}
+        <div className="relative -mx-2 -mt-2 mb-6 h-36 md:h-44 overflow-hidden rounded-lg border border-[#232a3b]">
+          <img
+            src={caseCover(caseData?.case_id, caseData?.source)}
+            alt=""
+            className="w-full h-full object-cover opacity-85"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-[#10141d] via-transparent to-transparent" />
+        </div>
         <div className="flex items-center justify-between mb-6">
           <p className="text-[10px] text-[#5a6478] tracking-[4px]">CASE FILE · CONFIDENTIAL</p>
           <span className={`stamp ${isSolo ? 'stamp-blue' : 'stamp-gold'} text-xs`}>

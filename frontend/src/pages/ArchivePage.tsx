@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useGameStore } from '../stores/gameStore';
 import { api } from '../api/client';
+import { caseCover } from '../utils/caseCovers';
 
 interface CaseItem {
   case_id: string;
@@ -49,6 +50,22 @@ export default function ArchivePage() {
   const [stories, setStories] = useState<StoryItem[]>([]);
   const [storyId, setStoryId] = useState<string | null>(null);
   const [storyLoading, setStoryLoading] = useState(false);
+  const [slide, setSlide] = useState(0);
+  const trackRef = useRef<HTMLDivElement>(null);
+
+  const goToSlide = (i: number) => {
+    const n = cases.length;
+    if (n === 0) return;
+    const next = Math.max(0, Math.min(n - 1, i));
+    setSlide(next);
+    const el = trackRef.current;
+    if (el) el.scrollTo({ left: next * el.clientWidth, behavior: 'smooth' });
+  };
+
+  const onTrackScroll = () => {
+    const el = trackRef.current;
+    if (el) setSlide(Math.round(el.scrollLeft / el.clientWidth));
+  };
 
   const refreshCases = async () => {
     try {
@@ -161,7 +178,7 @@ export default function ArchivePage() {
           <p className="text-[10px] text-[#5a6478] tracking-[4px] mb-1">CASE ARCHIVE ROOM</p>
           <h2 className="font-serif-detective text-2xl font-bold text-[#e8dcc4]">案件档案室</h2>
           <p className="text-sm text-[#8a94a8] mt-1">
-            选择一份卷宗，决定你的探案方式——<span className="text-[#6b9bd1]">独立探索</span>或<span className="text-[#d4a24c]">组队共探</span>
+            翻一翻下面的卷宗，选中哪个，就查哪个案子——<span className="text-[#6b9bd1]">单枪匹马</span>，或带上<span className="text-[#d4a24c]">AI 搭档</span>
           </p>
         </div>
         <div className="flex gap-2">
@@ -369,69 +386,118 @@ export default function ArchivePage() {
         </div>
       )}
 
-      {/* 案件列表 */}
+      {/* 案件卷宗：卡片轮播（滚动吸附 + 箭头翻页），减少平铺信息量 */}
       {pageLoading ? (
         <div className="text-center py-16 text-[#5a6478]">
           <span className="font-serif-detective tracking-[6px] text-lg">翻开卷宗...</span>
         </div>
+      ) : cases.length === 0 ? (
+        <div className="case-card p-10 text-center text-sm text-[#5a6478]">
+          档案室暂时空空如也——用右上角「AI 新建案件」生成第一份卷宗吧。
+        </div>
       ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-          {cases.map((c, i) => (
-            <div key={c.case_id} className="case-card p-6 anim-fade-up texture-paper" style={{ animationDelay: `${i * 60}ms` }}>
-              {/* 卷宗头部 */}
-              <div className="flex items-start justify-between mb-3">
-                <div className="flex items-center gap-2">
-                  <span className="text-[10px] text-[#5a6478] tracking-[2px] font-mono">
-                    FILE NO.{String(i + 1).padStart(3, '0')}
-                  </span>
-                  <span className={`tag ${c.source === 'preset' ? 'tag-blue' : 'tag-gold'}`}
-                    style={{ borderColor: c.source === 'preset' ? '#3d5a7a' : '#8a6d35', color: c.source === 'preset' ? '#6b9bd1' : '#d4a24c' }}>
-                    {c.source === 'preset' ? '官方' : c.source === 'custom' ? '投稿' : '热榜'}
-                  </span>
+        <div className="relative">
+          <div
+            ref={trackRef}
+            onScroll={onTrackScroll}
+            className="flex overflow-x-auto snap-x snap-mandatory scrollbar-thin rounded-xl"
+            style={{ scrollBehavior: 'smooth' }}
+          >
+            {cases.map((c, i) => (
+              <div key={c.case_id} className="snap-center shrink-0 w-full pr-0 md:px-1">
+                <div className="case-card md:mx-2 anim-fade-up texture-paper overflow-hidden" style={{ animationDelay: `${i * 60}ms` }}>
+                  {/* 封面插画 */}
+                  <div className="relative h-44 md:h-52 overflow-hidden">
+                    <img
+                      src={caseCover(c.case_id, c.source)}
+                      alt=""
+                      className="w-full h-full object-cover opacity-90"
+                      loading={i === 0 ? 'eager' : 'lazy'}
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-[#10141d] via-transparent to-transparent" />
+                    <div className="absolute top-3 left-4 flex items-center gap-2">
+                      <span className="text-[10px] text-[#c9d2e0] tracking-[2px] font-mono bg-[#0a0c10]/70 rounded px-2 py-0.5">
+                        FILE NO.{String(i + 1).padStart(3, '0')}
+                      </span>
+                      <span className={`tag ${c.source === 'preset' ? 'tag-blue' : 'tag-gold'}`}
+                        style={{ borderColor: c.source === 'preset' ? '#3d5a7a' : '#8a6d35', color: c.source === 'preset' ? '#6b9bd1' : '#d4a24c', background: 'rgba(10,12,16,0.7)' }}>
+                        {c.source === 'preset' ? '官方' : c.source === 'custom' ? '投稿' : '热榜'}
+                      </span>
+                    </div>
+                    <span className="absolute top-3 right-4 stamp stamp-seal text-[10px]">未侦破</span>
+                  </div>
+
+                  <div className="p-6">
+                    <h3 className="font-serif-detective text-xl font-bold text-[#e8dcc4] mb-2">
+                      {c.case_title}
+                    </h3>
+                    <p className="text-sm text-[#8a94a8] leading-relaxed line-clamp-2 mb-4">
+                      {c.case_intro}
+                    </p>
+
+                    <div className="flex gap-4 text-xs text-[#5a6478] mb-5 pb-4 border-b border-[#232a3b]">
+                      <span>嫌疑人 {c.npc_count || 3}</span>
+                      <span>搜证 {c.search_direction_count || 4}</span>
+                      <span>关键证据 {c.key_evidence_count || 3}</span>
+                      {c.source_topic && !/\?{3,}/.test(c.source_topic) && (
+                        <span className="text-[#8a6d35] truncate">
+                          {c.source === 'custom' ? '投稿' : '源自'}：{c.source_topic}
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <button
+                        onClick={() => handleStart(c.case_id, 'solo')}
+                        disabled={loading || !fingerprint}
+                        className="btn-solo py-3 text-sm flex flex-col items-center gap-0.5"
+                      >
+                        <span className="font-serif-detective tracking-widest">独立探索</span>
+                        <span className="text-[10px] opacity-80 font-normal tracking-wide">单人 · 高难度</span>
+                      </button>
+                      <button
+                        onClick={() => handleStart(c.case_id, 'team')}
+                        disabled={loading || !fingerprint}
+                        className="btn-primary py-3 text-sm flex flex-col items-center gap-0.5"
+                      >
+                        <span className="font-serif-detective tracking-widest">组队共探</span>
+                        <span className="text-[10px] opacity-80 font-normal tracking-wide">搭档互补 · 标准</span>
+                      </button>
+                    </div>
+                  </div>
                 </div>
-                <span className="stamp stamp-seal text-[10px]">未侦破</span>
               </div>
+            ))}
+          </div>
 
-              <h3 className="font-serif-detective text-xl font-bold text-[#e8dcc4] mb-2">
-                {c.case_title}
-              </h3>
-              <p className="text-sm text-[#8a94a8] leading-relaxed line-clamp-3 mb-4">
-                {c.case_intro}
-              </p>
-
-              {/* 卷宗统计 */}
-              <div className="flex gap-4 text-xs text-[#5a6478] mb-5 pb-4 border-b border-[#232a3b]">
-                <span>涉案人物 {c.npc_count || 3}</span>
-                <span>搜证方向 {c.search_direction_count || 4}</span>
-                <span>关键证据 {c.key_evidence_count || 3}</span>
-                {c.source_topic && !/\?{3,}/.test(c.source_topic) && (
-                  <span className="text-[#8a6d35]">
-                    {c.source === 'custom' ? '投稿事件' : '源自'}：{c.source_topic}
-                  </span>
-                )}
+          {/* 翻页箭头与指示点 */}
+          {cases.length > 1 && (
+            <>
+              <button
+                onClick={() => goToSlide(slide - 1)}
+                disabled={slide === 0}
+                aria-label="上一份卷宗"
+                className="absolute left-1 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-[#0a0c10]/80 border border-[#2a3245] text-[#c9d2e0] text-lg hover:border-[#8a6d35] hover:text-[#d4a24c] transition disabled:opacity-25"
+              >‹</button>
+              <button
+                onClick={() => goToSlide(slide + 1)}
+                disabled={slide === cases.length - 1}
+                aria-label="下一份卷宗"
+                className="absolute right-1 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-[#0a0c10]/80 border border-[#2a3245] text-[#c9d2e0] text-lg hover:border-[#8a6d35] hover:text-[#d4a24c] transition disabled:opacity-25"
+              >›</button>
+              <div className="flex items-center justify-center gap-2 mt-4">
+                {cases.map((_, i) => (
+                  <button
+                    key={i}
+                    onClick={() => goToSlide(i)}
+                    aria-label={`第${i + 1}份卷宗`}
+                    className={`h-1.5 rounded-full transition-all ${i === slide ? 'w-6 bg-[#d4a24c]' : 'w-1.5 bg-[#2a3245] hover:bg-[#3d5a7a]'}`}
+                  />
+                ))}
               </div>
-
-              {/* 模式选择按钮 —— 核心区分 */}
-              <div className="grid grid-cols-2 gap-3">
-                <button
-                  onClick={() => handleStart(c.case_id, 'solo')}
-                  disabled={loading || !fingerprint}
-                  className="btn-solo py-3 text-sm flex flex-col items-center gap-0.5"
-                >
-                  <span className="font-serif-detective tracking-widest">独立探索</span>
-                  <span className="text-[10px] opacity-80 font-normal tracking-wide">单人 · 高难度</span>
-                </button>
-                <button
-                  onClick={() => handleStart(c.case_id, 'team')}
-                  disabled={loading || !fingerprint}
-                  className="btn-primary py-3 text-sm flex flex-col items-center gap-0.5"
-                >
-                  <span className="font-serif-detective tracking-widest">组队共探</span>
-                  <span className="text-[10px] opacity-80 font-normal tracking-wide">搭档互补 · 标准</span>
-                </button>
-              </div>
-            </div>
-          ))}
+              <p className="text-center text-[10px] text-[#5a6478] mt-2 tracking-[2px]">← 拖动或点箭头翻阅卷宗 →</p>
+            </>
+          )}
         </div>
       )}
     </div>

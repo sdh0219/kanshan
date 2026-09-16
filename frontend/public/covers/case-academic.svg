@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 360" width="640" height="360">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#0b1220"/><stop offset="0.7" stop-color="#101a2e"/><stop offset="1" stop-color="#0a0c10"/>
+    </linearGradient>
+    <linearGradient id="win" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#d4a24c"/><stop offset="1" stop-color="#8a6d35"/>
+    </linearGradient>
+    <filter id="grain"><feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" stitchTiles="stitch"/><feColorMatrix type="saturate" values="0"/><feComponentTransfer><feFuncA type="linear" slope="0.06"/></feComponentTransfer><feComposite operator="over" in2="SourceGraphic"/></filter>
+    <filter id="vig"><feComponentTransfer><feFuncA type="linear" slope="0.9" intercept="0"/></feComponentTransfer><feGaussianBlur stdDeviation="10"/></filter>
+  </defs>
+  <rect width="640" height="360" fill="url(#sky)"/>
+  <!-- 远景楼群 -->
+  <g fill="#0d1526">
+    <rect x="0" y="150" width="120" height="210"/><rect x="130" y="120" width="90" height="240"/><rect x="500" y="140" width="140" height="220"/>
+  </g>
+  <!-- 主楼（教学楼剪影） -->
+  <g fill="#0a1120">
+    <rect x="240" y="80" width="160" height="280"/>
+    <polygon points="240,80 400,80 320,40"/>
+  </g>
+  <!-- 亮着的窗（案发窗口）+ 暗窗阵列 -->
+  <g fill="#182338">
+    <rect x="256" y="110" width="24" height="34"/><rect x="296" y="110" width="24" height="34"/><rect x="336" y="110" width="24" height="34"/>
+    <rect x="256" y="170" width="24" height="34"/><rect x="336" y="170" width="24" height="34"/>
+    <rect x="256" y="230" width="24" height="34"/><rect x="296" y="230" width="24" height="34"/><rect x="336" y="230" width="24" height="34"/>
+  </g>
+  <rect x="296" y="170" width="24" height="34" fill="url(#win)" opacity="0.95"/>
+  <!-- 人影 -->
+  <g fill="#060a12">
+    <circle cx="308" cy="182" r="5"/>
+    <rect x="303" y="188" width="10" height="14" rx="3"/>
+  </g>
+  <!-- 飘落的论文 -->
+  <g fill="#c9d2e0" opacity="0.5">
+    <rect x="420" y="120" width="14" height="10" rx="1" transform="rotate(18 427 125)"/>
+    <rect x="452" y="180" width="12" height="9" rx="1" transform="rotate(-24 458 184)"/>
+    <rect x="180" y="210" width="13" height="9" rx="1" transform="rotate(40 186 214)"/>
+    <rect x="470" y="250" width="11" height="8" rx="1" transform="rotate(-12 475 254)"/>
+  </g>
+  <!-- 雨 -->
+  <g stroke="#3d5a7a" stroke-width="1" opacity="0.35">
+    <line x1="60" y1="20" x2="48" y2="60"/><line x1="150" y1="10" x2="138" y2="52"/><line x1="250" y1="18" x2="238" y2="58"/>
+    <line x1="430" y1="30" x2="418" y2="70"/><line x1="560" y1="16" x2="548" y2="58"/><line x1="610" y1="90" x2="598" y2="130"/>
+    <line x1="100" y1="260" x2="88" y2="300"/><line x1="600" y1="240" x2="588" y2="282"/>
+  </g>
+  <!-- 放大镜点缀 -->
+  <g opacity="0.85">
+    <circle cx="548" cy="286" r="26" fill="none" stroke="#d4a24c" stroke-width="3"/>
+    <line x1="566" y1="304" x2="586" y2="324" stroke="#d4a24c" stroke-width="5" stroke-linecap="round"/>
+    <circle cx="548" cy="286" r="26" fill="#d4a24c" opacity="0.08"/>
+  </g>
+  <rect width="640" height="360" fill="#0a0c10" opacity="0.25" filter="url(#grain)"/>
+  <rect width="640" height="360" fill="none" stroke="#0a0c10" stroke-width="60" opacity="0.5"/>
+</svg>

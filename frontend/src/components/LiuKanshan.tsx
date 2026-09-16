@@ -37,7 +37,7 @@ interface KanshanPortraitProps {
 export function KanshanPortrait({ pose = 1, size = 48, className = '', rounded = true }: KanshanPortraitProps) {
   return (
     <img
-      src={`/liukan/liukan_pose_${pose}.jpg`}
+      src={`/liukan/liukan_pose_${pose}.png`}
       alt="刘看山"
       width={size}
       height={size}
