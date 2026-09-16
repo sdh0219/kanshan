@@ -6,6 +6,7 @@ import DialogueBox from '../components/Detective/DialogueBox';
 import ClueWall from '../components/Detective/ClueWall';
 import CaseIntro from '../components/Detective/CaseIntro';
 import { playSfx } from '../utils/sfx';
+import VoiceInput from '../components/VoiceInput';
 
 export default function GamePage() {
   const {
@@ -245,6 +246,7 @@ export default function GamePage() {
             setKeyword={setSearchKeyword}
             onSearch={() => handleSearch()}
             onQuickSearch={(kw) => { setSearchKeyword(kw); handleSearch(kw); }}
+            onVoiceText={(t) => handleSearch(t)}
             results={searchResults}
             loading={loading}
             hints={caseData?.search_directions?.map((d: any) => ({ keyword: d.keyword, hint: d.hint }))}
@@ -326,14 +328,21 @@ export default function GamePage() {
               真相是什么？谁是幕后推手，动机又是什么？结合你收集到的线索写下推理——
               看山会亲自评估你的推理质量，它和关键证据一样影响结局。
             </p>
-            <button
-              onClick={() => setReasoningText('我认为真凶是____。关键证据是____，它说明____。TA的动机是____，手法是____。所以真相就是____。')}
-              disabled={loading || reasoningText.trim().length > 0}
-              className="btn-ghost px-3 py-1 text-xs mb-3 disabled:opacity-30"
-              title={reasoningText.trim().length > 0 ? '已有内容，不再覆盖' : '按"真凶+证据+动机+手法"生成一份陈词骨架'}
-            >
-              📝 不会写？一键套用陈词模板（填空即可）
-            </button>
+            <div className="flex items-center gap-2 mb-3 flex-wrap">
+              <button
+                onClick={() => setReasoningText('我认为真凶是____。关键证据是____，它说明____。TA的动机是____，手法是____。所以真相就是____。')}
+                disabled={loading || reasoningText.trim().length > 0}
+                className="btn-ghost px-3 py-1 text-xs disabled:opacity-30"
+                title={reasoningText.trim().length > 0 ? '已有内容，不再覆盖' : '按"真凶+证据+动机+手法"生成一份陈词骨架'}
+              >
+                📝 不会写？一键套用陈词模板（填空即可）
+              </button>
+              <VoiceInput
+                disabled={loading}
+                onText={(t) => setReasoningText((prev: string) => (prev ? prev + t : t))}
+              />
+              <span className="text-xs text-[#5a6478]">🎙 点一下说出你的推理，可多次追加</span>
+            </div>
             <textarea
               value={reasoningText}
               onChange={(e) => setReasoningText(e.target.value)}

@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { KanshanPortrait } from '../LiuKanshan';
 import ThinkingDots from './ThinkingDots';
+import VoiceInput from '../VoiceInput';
 
 interface DialogueEntry {
   role: 'player' | 'npc' | 'companion' | 'kanshan';
@@ -117,6 +118,7 @@ export default function DialogueBox({ dialogues, npcList, currentNpcId, question
           disabled={!currentNpcId || loading}
           className="input-detective flex-1 px-4 py-2.5 text-sm disabled:opacity-40"
         />
+        <VoiceInput disabled={!currentNpcId || loading} onText={(t) => setQuestion(t)} />
         <button
           onClick={() => currentNpcId && onTalk(currentNpcId)}
           disabled={loading || !currentNpcId || !question.trim()}

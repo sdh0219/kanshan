@@ -1,17 +1,19 @@
 import { KanshanGif } from '../LiuKanshan';
 import ThinkingDots from './ThinkingDots';
+import VoiceInput from '../VoiceInput';
 
 interface SearchPanelProps {
   keyword: string;
   setKeyword: (v: string) => void;
   onSearch: () => void;
   onQuickSearch?: (kw: string) => void;
+  onVoiceText?: (t: string) => void;
   results: any[];
   loading: boolean;
   hints?: { keyword: string; hint: string }[];
 }
 
-export default function SearchPanel({ keyword, setKeyword, onSearch, onQuickSearch, results, loading, hints }: SearchPanelProps) {
+export default function SearchPanel({ keyword, setKeyword, onSearch, onQuickSearch, onVoiceText, results, loading, hints }: SearchPanelProps) {
   return (
     <div className="case-card p-5">
       <div className="flex items-center justify-between mb-4">
@@ -32,6 +34,10 @@ export default function SearchPanel({ keyword, setKeyword, onSearch, onQuickSear
           onKeyDown={(e) => e.key === 'Enter' && onSearch()}
           placeholder="自由输入关键词，在知乎真实内容中搜证..."
           className="input-detective flex-1 px-4 py-2.5 text-sm"
+        />
+        <VoiceInput
+          disabled={loading}
+          onText={(t) => { setKeyword(t); if (onVoiceText) onVoiceText(t); }}
         />
         <button
           onClick={onSearch}
