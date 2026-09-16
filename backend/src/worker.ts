@@ -280,6 +280,12 @@ app.post('/api/archive/record', async (c) => {
   return c.json({ record });
 });
 
+/* 全体玩家排行榜：积分 = 真相浮现×3 + 模糊×1，按分排序取前10 */
+app.get('/api/archive/leaderboard', async (c) => {
+  const leaderboard = await caseStore.getLeaderboard(10);
+  return c.json({ leaderboard });
+});
+
 app.get('/api/archive/records', async (c) => {
   const userId = c.req.query('userId') || '';
   if (!userId) return c.json({ error: 'userId 必填' }, 400);

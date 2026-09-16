@@ -176,6 +176,45 @@ export async function removeUserRecords(userId: string): Promise<number> {
   return records.length - remaining.length;
 }
 
+export interface LeaderboardEntry {
+  rank: number;
+  user_id: string;
+  user_display_name: string;
+  total: number;
+  good: number;
+  neutral: number;
+  total_clues: number;
+  points: number;
+}
+
+/** 全体玩家排行榜：按积分（真相浮现×3 + 模糊×1）排序，取前 N */
+export async function getLeaderboard(limit = 10): Promise<LeaderboardEntry[]> {
+  const records = await readRecords();
+  const byUser = new Map<string, LeaderboardEntry>();
+  for (const r of records) {
+    const cur = byUser.get(r.user_id) || {
+      rank: 0,
+      user_id: r.user_id,
+      user_display_name: r.user_display_name || r.user_id,
+      total: 0,
+      good: 0,
+      neutral: 0,
+      total_clues: 0,
+      points: 0,
+    };
+    cur.total += 1;
+    if (r.ending_type === 'good') cur.good += 1;
+    if (r.ending_type === 'neutral') cur.neutral += 1;
+    cur.total_clues += r.clue_count || 0;
+    cur.points = cur.good * 3 + cur.neutral;
+    byUser.set(r.user_id, cur);
+  }
+  return [...byUser.values()]
+    .sort((a, b) => b.points - a.points || b.total - a.total || b.total_clues - a.total_clues)
+    .slice(0, limit)
+    .map((e, i) => ({ ...e, rank: i + 1 }));
+}
+
 export const caseStore = {
   listCases,
   getCaseById,
@@ -185,5 +224,6 @@ export const caseStore = {
   getUserRecords,
   computeStats,
   removeUserRecords,
+  getLeaderboard,
 };
 export default caseStore;

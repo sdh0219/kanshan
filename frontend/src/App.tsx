@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useGameStore } from './stores/gameStore';
 import { KanshanPortrait } from './components/LiuKanshan';
 import { isMuted, toggleMuted } from './utils/sfx';
+import CornerPet, { getPetVariant } from './components/CornerPet';
 import HomePage from './pages/HomePage';
 import FingerprintPage from './pages/FingerprintPage';
 import ArchivePage from './pages/ArchivePage';
@@ -83,6 +84,9 @@ export default function App() {
           <span className="tracking-[2px]">知乎黑客松 2026 · CAMPUS RISING</span>
         </div>
       </footer>
+
+      {/* 看山桌宠：图鉴解锁并选择后常驻右下角 */}
+      {getPetVariant() && <CornerPet variant={getPetVariant()!} />}
     </div>
   );
 }

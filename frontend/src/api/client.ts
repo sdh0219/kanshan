@@ -57,6 +57,7 @@ export const api = {
     custom: (userInput: string, userId: string) => postJSON('/archive/custom', { userInput, userId }),
     saveRecord: (data: any) => postJSON('/archive/record', data),
     records: (userId: string) => getJSON(`/archive/records?userId=${encodeURIComponent(userId)}`),
+    leaderboard: () => getJSON('/archive/leaderboard'),
     quota: () => getJSON('/quota'),
   },
   auth: {

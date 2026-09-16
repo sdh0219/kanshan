@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useGameStore } from '../stores/gameStore';
 import { api } from '../api/client';
 import { KanshanGif } from '../components/LiuKanshan';
+import { MASCOTS, PET_KEY } from '../utils/mascots';
 
 interface ExploreRecordItem {
   record_id: string;
@@ -16,6 +17,16 @@ interface ExploreRecordItem {
   finished_at: string;
 }
 
+interface LeaderboardEntry {
+  rank: number;
+  user_id: string;
+  user_display_name: string;
+  total: number;
+  good: number;
+  total_clues: number;
+  points: number;
+}
+
 const endingConfig: Record<string, { label: string; stampClass: string }> = {
   good: { label: '真相浮现', stampClass: 'stamp-green' },
   neutral: { label: '真相模糊', stampClass: 'stamp-gold' },
@@ -28,6 +39,19 @@ export default function MyRecordsPage() {
   const [records, setRecords] = useState<ExploreRecordItem[]>([]);
   const [stats, setStats] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [board, setBoard] = useState<LeaderboardEntry[]>([]);
+  const [pet, setPet] = useState<string | null>(() => {
+    try { return localStorage.getItem(PET_KEY); } catch { return null; }
+  });
+
+  const choosePet = (variant: string) => {
+    setPet(variant);
+    try { localStorage.setItem(PET_KEY, variant); } catch {}
+  };
+
+  useEffect(() => {
+    api.archive.leaderboard().then((d: any) => setBoard(d.leaderboard || [])).catch(() => {});
+  }, []);
 
   useEffect(() => {
     if (!userId) {
@@ -87,6 +111,94 @@ export default function MyRecordsPage() {
             ))}
           </div>
         </div>
+      )}
+
+      {/* 看山图鉴：随破案数解锁桌宠 */}
+      <section className="case-card p-6">
+        <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
+          <div>
+            <p className="text-[10px] text-[#5a6478] tracking-[4px] mb-1">KANSHAN COLLECTION</p>
+            <h3 className="font-serif-detective text-lg font-bold text-[#e8dcc4]">看山图鉴 · 桌宠收集</h3>
+          </div>
+          <span className="text-xs text-[#8a94a8]">
+            破案解锁新形态 · 点击已解锁的看山设为随行桌宠
+          </span>
+        </div>
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+          {MASCOTS.map((m) => {
+            const unlocked = (stats?.total || 0) >= m.unlockAt;
+            const isPet = pet === m.variant;
+            return (
+              <button
+                key={m.variant}
+                onClick={() => unlocked && choosePet(m.variant)}
+                disabled={!unlocked}
+                className={`relative rounded-lg border p-3 text-center transition ${
+                  unlocked
+                    ? isPet
+                      ? 'border-[#d4a24c] bg-[#d4a24c]/10 cursor-pointer'
+                      : 'border-[#232a3b] bg-[#0a0c10]/60 hover:border-[#8a6d35] cursor-pointer'
+                    : 'border-[#232a3b] bg-[#0a0c10]/40 cursor-not-allowed'
+                }`}
+                title={unlocked ? m.desc : `破 ${m.unlockAt} 案解锁`}
+              >
+                <div className={`flex justify-center ${unlocked ? '' : 'opacity-30 grayscale'}`}>
+                  <KanshanGif variant={m.variant} size={64} />
+                </div>
+                <p className={`text-xs font-bold mt-2 ${unlocked ? 'text-[#e8dcc4]' : 'text-[#5a6478]'}`}>
+                  {unlocked ? m.name : '？？？'}
+                </p>
+                {isPet ? (
+                  <p className="text-[10px] text-[#d4a24c] mt-1">★ 随行中</p>
+                ) : unlocked ? (
+                  <p className="text-[10px] text-[#6dbb8a] mt-1">点我随行</p>
+                ) : (
+                  <p className="text-[10px] text-[#5a6478] mt-1">🔒 破 {m.unlockAt} 案解锁</p>
+                )}
+              </button>
+            );
+          })}
+        </div>
+        {pet && (
+          <p className="text-xs text-[#6dbb8a] mt-3">
+            ✓ 桌宠已随行——它现在待在页面右下角，点它会有话对你说。
+          </p>
+        )}
+      </section>
+
+      {/* 侦探排行榜 */}
+      {board.length > 0 && (
+        <section className="case-card p-6">
+          <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
+            <div>
+              <p className="text-[10px] text-[#5a6478] tracking-[4px] mb-1">DETECTIVE LEADERBOARD</p>
+              <h3 className="font-serif-detective text-lg font-bold text-[#e8dcc4]">侦探排行榜</h3>
+            </div>
+            <span className="text-xs text-[#8a94a8]">积分 = 真相浮现 ×3 + 真相模糊 ×1</span>
+          </div>
+          <div className="space-y-2">
+            {board.map((e) => {
+              const isMe = e.user_id === userId;
+              const medal = e.rank === 1 ? '🥇' : e.rank === 2 ? '🥈' : e.rank === 3 ? '🥉' : `#${e.rank}`;
+              return (
+                <div
+                  key={e.user_id}
+                  className={`flex items-center gap-3 px-4 py-2.5 rounded border text-sm ${
+                    isMe ? 'border-[#d4a24c]/70 bg-[#d4a24c]/10' : 'border-[#232a3b] bg-[#0a0c10]/50'
+                  }`}
+                >
+                  <span className="w-9 text-center text-base shrink-0">{medal}</span>
+                  <span className={`flex-1 min-w-0 truncate ${isMe ? 'text-[#d4a24c] font-bold' : 'text-[#c9d2e0]'}`}>
+                    {e.user_display_name}
+                    {isMe && <span className="text-[10px] text-[#5a6478] ml-2">（你）</span>}
+                  </span>
+                  <span className="text-xs text-[#8a94a8] shrink-0 hidden sm:inline">破案 {e.total} · 真相浮现 {e.good} · 线索 {e.total_clues}</span>
+                  <span className="text-sm font-serif-detective font-bold text-[#d4a24c] shrink-0">{e.points} 分</span>
+                </div>
+              );
+            })}
+          </div>
+        </section>
       )}
 
       {/* 记录列表 */}
