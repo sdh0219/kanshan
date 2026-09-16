@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useGameStore } from '../stores/gameStore';
 import { api } from '../api/client';
 import { KanshanGif, KanshanBubble } from '../components/LiuKanshan';
+import WelcomeGuide from '../components/WelcomeGuide';
 
 export default function HomePage() {
   const {
@@ -87,6 +88,8 @@ export default function HomePage() {
 
   return (
     <div className="space-y-10">
+      {/* 首次访问引导：15 秒看懂玩法（每台设备一次，可跳过） */}
+      <WelcomeGuide />
       {/* 主视觉 */}
       <section className="relative py-14 anim-fade-up">
         <div className="grid grid-cols-1 md:grid-cols-5 gap-8 items-center">
