@@ -148,18 +148,27 @@ export default function HomePage() {
           </KanshanBubble>
         </div>
 
-        {/* 知乎账号登录（官方 OAuth；登录人数计入人气奖评定，启用凭证后自动出现；已登录则隐藏避免误导） */}
-        {oauthEnabled && !oauthHandle && (
+        {/* 知乎账号登录（官方 OAuth；登录人数计入人气奖评定） */}
+        {oauthEnabled && oauthHandle ? (
+          <div className="w-full mb-4 px-4 py-3 rounded border border-[#4a7a5c]/60 bg-[#0a0c10]/60 flex items-center justify-between gap-3 flex-wrap">
+            <span className="text-sm text-[#6dbb8a]">
+              ✓ 已登录知乎账号（{oauthHandle}）· 探案记录将计入人气奖
+            </span>
+            <a
+              href="/api/auth/logout"
+              className="text-xs text-[#5a6478] hover:text-[#8a94a8] underline underline-offset-2 shrink-0"
+            >
+              退出登录 / 切换账号
+            </a>
+          </div>
+        ) : oauthEnabled ? (
           <a
             href="/api/auth/login"
             className="btn-primary w-full py-3.5 text-sm flex items-center justify-center gap-2 anim-pulse-gold mb-4"
           >
             🔑 使用知乎账号登录 · 直接分析你的真实回答
           </a>
-        )}
-        {oauthHandle && (
-          <p className="mb-4 text-xs text-[#6dbb8a]">✓ 已用知乎账号登录（{oauthHandle}）——指纹与卷宗将记录在该账号下</p>
-        )}
+        ) : null}
 
         {/* 快速体验通道：评委与新玩家的首选路径，免输入一键建档 */}
         {seedUsers.length > 0 && (
