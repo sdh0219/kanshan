@@ -42,8 +42,8 @@ export const api = {
     start: (caseId: string) => postJSON('/game/start', { caseId }),
     search: (keyword: string, state: any, caseId: string) =>
       postJSON('/game/search', { keyword, state, caseId }),
-    talk: (npcId: string, question: string, state: any, caseId: string) =>
-      postJSON('/game/talk', { npcId, question, state, caseId }),
+    talk: (npcId: string, question: string, state: any, caseId: string, turn?: number) =>
+      postJSON('/game/talk', { npcId, question, state, caseId, turn }),
     evaluate: (state: any, caseId: string, reasoning?: string, skipReasoning?: boolean) =>
       postJSON('/game/evaluate', { state, caseId, reasoning, skipReasoning }),
   },

@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { KanshanPortrait } from '../LiuKanshan';
 import ThinkingDots from './ThinkingDots';
 import VoiceInput from '../VoiceInput';
@@ -29,10 +29,39 @@ const roleConfig: Record<string, { name: string; color: string; borderColor: str
 
 export default function DialogueBox({ dialogues, npcList, currentNpcId, question, setQuestion, onTalk, loading, companionThinking }: DialogueBoxProps) {
   const endRef = useRef<HTMLDivElement>(null);
+  const [npcVoice, setNpcVoice] = useState(() => {
+    try { return localStorage.getItem('kanshan_npc_voice') !== '0'; } catch { return true; }
+  });
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [dialogues]);
+
+  // NPC 台词朗读：新 NPC 消息到达且开关开启时，用浏览器语音合成念出来（按角色微调音高）
+  useEffect(() => {
+    if (!npcVoice || !('speechSynthesis' in window)) return;
+    const last = dialogues[dialogues.length - 1];
+    if (!last || last.role !== 'npc') return;
+    try {
+      window.speechSynthesis.cancel();
+      const utter = new SpeechSynthesisUtterance(last.content);
+      utter.lang = 'zh-CN';
+      utter.rate = 1;
+      utter.pitch = 0.7 + ((last.npcId || '').length % 4) * 0.15;
+      window.speechSynthesis.speak(utter);
+    } catch {}
+  }, [dialogues, npcVoice]);
+
+  useEffect(() => () => { try { window.speechSynthesis?.cancel(); } catch {} }, []);
+
+  const toggleVoice = () => {
+    setNpcVoice((v) => {
+      const next = !v;
+      try { localStorage.setItem('kanshan_npc_voice', next ? '1' : '0'); } catch {}
+      if (!next) { try { window.speechSynthesis?.cancel(); } catch {} }
+      return next;
+    });
+  };
 
   const npcName = (npcId: string | null) => {
     if (!npcId) return '证人';
@@ -43,9 +72,18 @@ export default function DialogueBox({ dialogues, npcList, currentNpcId, question
   return (
     <div className="case-card p-5">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="font-serif-detective text-sm font-bold text-[#6b9bd1] tracking-widest">
-          讯问 · 证人对话
-        </h3>
+        <div className="flex items-center gap-2">
+          <h3 className="font-serif-detective text-sm font-bold text-[#6b9bd1] tracking-widest">
+            讯问 · 证人对话
+          </h3>
+          <button
+            onClick={toggleVoice}
+            title={npcVoice ? 'NPC 台词朗读：开（点击关闭）' : 'NPC 台词朗读：关（点击开启）'}
+            className={`text-xs px-2 py-0.5 rounded border transition ${npcVoice ? 'border-[#4a7a5c]/60 text-[#6dbb8a]' : 'border-[#2a3245] text-[#5a6478]'}`}
+          >
+            {npcVoice ? '🗣 朗读中' : '🗣 朗读关'}
+          </button>
+        </div>
         <span className="text-[10px] text-[#5a6478] tracking-[2px]">INTERROGATION</span>
       </div>
 

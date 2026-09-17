@@ -143,6 +143,7 @@ export async function talkToNpc(
   playerQuestion: string,
   state: GameState & { caseId?: string },
   companionFollowup?: string,
+  turn = 1,
 ): Promise<string> {
   const caseData = await getCaseData(state?.caseId || 'preset');
   const npcConfig = (caseData?.npcs || []).find((n: any) => n.id === npcId);
@@ -187,7 +188,8 @@ export async function talkToNpc(
     .replace('{{npc_trigger_rule_1}}', npcConfig.trigger_rules?.[0] || '')
     .replace('{{npc_trigger_rule_2}}', npcConfig.trigger_rules?.[1] || '')
     .replace('{{player_question}}', playerQuestion)
-    .replace('{{companion_followup}}', companionFollowup || '无');
+    .replace('{{companion_followup}}', companionFollowup || '无')
+    .replace(/{{npc_turn}}/g, String(Math.max(1, turn)));
 
   try {
     const reply = await agentApi.chat([

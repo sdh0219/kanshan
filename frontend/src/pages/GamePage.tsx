@@ -7,6 +7,7 @@ import ClueWall from '../components/Detective/ClueWall';
 import CaseIntro from '../components/Detective/CaseIntro';
 import { playSfx } from '../utils/sfx';
 import VoiceInput from '../components/VoiceInput';
+import SceneMap from '../components/Detective/SceneMap';
 
 export default function GamePage() {
   const {
@@ -101,7 +102,8 @@ export default function GamePage() {
     setError(null);
     try {
       addDialogue({ role: 'player', content: npcQuestion, npcId });
-      const result = await api.game.talk(npcId, npcQuestion, { clues }, caseId);
+      const turn = dialogues.filter((d: any) => d.npcId === npcId && d.role === 'player').length + 1;
+      const result = await api.game.talk(npcId, npcQuestion, { clues }, caseId, turn);
       addDialogue({ role: 'npc', content: result.reply, npcId });
 
       if (isTeamMode && companion) {
@@ -241,6 +243,12 @@ export default function GamePage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
         {/* 左：搜证+对话 */}
         <div className="lg:col-span-2 space-y-4">
+          <SceneMap
+            directions={caseData?.search_directions?.map((d: any) => ({ keyword: d.keyword, hint: d.hint })) || []}
+            onSearch={(kw) => { setSearchKeyword(kw); handleSearch(kw); }}
+            loading={loading}
+            lastKeyword={searchKeyword}
+          />
           <SearchPanel
             keyword={searchKeyword}
             setKeyword={setSearchKeyword}

@@ -123,9 +123,9 @@ app.post('/api/game/search', async (c) => {
 });
 
 app.post('/api/game/talk', async (c) => {
-  const { npcId, question, state, companionFollowup, caseId } = await c.req.json<any>().catch(() => ({}));
+  const { npcId, question, state, companionFollowup, caseId, turn } = await c.req.json<any>().catch(() => ({}));
   if (!npcId || !question) return c.json({ error: 'npcId 和 question 必填' }, 400);
-  const reply = await gameEngine.talkToNpc(npcId, question, { ...state, caseId: state?.caseId || caseId || 'preset' }, companionFollowup);
+  const reply = await gameEngine.talkToNpc(npcId, question, { ...state, caseId: state?.caseId || caseId || 'preset' }, companionFollowup, Number(turn) || 1);
   return c.json({ reply });
 });
 
